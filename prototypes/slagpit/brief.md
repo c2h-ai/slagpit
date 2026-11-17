@@ -63,7 +63,7 @@ After play: 이 부분이 잘 눈에 안 띠어. 그니깐 내가 죽였으면 �
 - [x] 일시정지 화면 마우스 감도 설정
 
 ## Keep
--
+- 계속 살아나면서 목표에 도달하게 하는 게 집중도가 올라갔어 *(you said)* · pins: respawnTime 2, matchKills0 10, matchKills1 15, matchKills2 20
 
 ## Avoid
 - Krunker.io의 이름, 아트, 캐릭터, UI *(guessed)*
