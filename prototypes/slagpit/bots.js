@@ -144,7 +144,7 @@ function hurt(v, amount, by, head) {
   state.feed.unshift({ text: `${by.name}  [${gun}]  ${v.name}`, mine: by.isPlayer || v.isPlayer, t: 4 });
   if (state.feed.length > 5) state.feed.pop();
   events.push({ type: 'kill', by: by.name, victim: v.name });
-  if (by.isPlayer) { state.killmark = 0.6; state.score = by.kills; sfx('kill'); }
+  if (by.isPlayer) { state.killmark = 1.8; state.killName = v.name; state.score = by.kills; sfx('kill'); }
   if (v.isPlayer) { v.killedBy = by.name; sfx('death'); }
   if (by.kills >= killTarget()) endMatch();
 }

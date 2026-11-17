@@ -94,7 +94,17 @@ function drawHud() {
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => { ctx.moveTo(cx + a * 7, cy + b * 7); ctx.lineTo(cx + a * 15, cy + b * 15); });
     ctx.stroke(); ctx.globalAlpha = 1;
   }
-  if (state.killmark > 0) text('KILL', cx, cy + 46, 22, BLOOD);
+  if (state.killmark > 0) { // your kill: a gold flash at the edges and a banner under the crosshair
+    const t = state.killmark, pop = 1 + Math.max(0, t - 1.3) * 1.5;
+    const gr = ctx.createRadialGradient(cx, cy, 260, cx, cy, 760);
+    gr.addColorStop(0, 'rgba(255,200,60,0)'); gr.addColorStop(1, `rgba(255,190,40,${Math.min(0.35, Math.max(0, t - 1.0))})`);
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = Math.min(1, t * 2);
+    panel(cx - 230, cy + 92, 460, 92, 0.8);
+    text(`KILLED  ${state.killName}`, cx, cy + 124, Math.round(32 * pop), YELLOW);
+    text(`+1   ·   ${p.kills} / ${killTarget()}`, cx, cy + 162, 22, '#f0e8da');
+    ctx.globalAlpha = 1;
+  }
   // hurt direction: a bright red arrow pointing toward the shooter, over a faint arc
   state.hurt.forEach(hm => {
     const a = -Math.PI / 2 - hm.ang, ux = Math.cos(a), uy = Math.sin(a), vx = -uy, vy = ux;
@@ -145,9 +155,14 @@ function drawHud() {
   else if (lowAmmo && p.alive) text('LOW AMMO', cx, cy + 80, 16, ORANGE);
   // timer and score, top centre
   const lead = [...state.all].sort((a, b) => b.kills - a.kills).find(c => !c.isPlayer);
-  panel(cx - 170, 14, 340, 64);
-  text(fmtTime(state.timeLeft), cx, 36, 26, '#f0e8da');
-  text(`YOU ${p.kills}   ·   ${lead.name} ${lead.kills}   ·   FIRST TO ${killTarget()}`, cx, 62, 15, DIM);
+  panel(cx - 260, 14, 520, 70);
+  text(fmtTime(state.timeLeft), cx, 40, 28, '#f0e8da');
+  text(`FIRST TO ${killTarget()}`, cx, 68, 14, DIM);
+  const bump = 1 + Math.max(0, state.killmark - 1.2) * 1.2; // your score swells when you kill
+  text('YOU', cx - 230, 34, 15, YELLOW, 'left');
+  text(String(p.kills), cx - 230, 62, Math.round(34 * bump), YELLOW, 'left');
+  text(lead.name, cx + 230, 34, 15, DIM, 'right');
+  text(String(lead.kills), cx + 230, 62, 34, '#f0e8da', 'right');
   // kill feed, top right
   state.feed.forEach((f, i) => {
     ctx.globalAlpha = Math.min(1, f.t); panel(W - 380, 14 + i * 30, 356, 26, 0.5);
