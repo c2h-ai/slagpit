@@ -1,2 +1,3 @@
 iteration 1	ammo crate is left alone when every reserve is full	errors: none (console rows are the headless GPU driver ReadPixels notice only)	prototypes/slagpit/evidence/iteration-1-play.png
 iteration 2	health bar over bots the player hit, for 3 s	errors: none	prototypes/slagpit/evidence/iteration-2-play.png
+iteration 3	two health packs on the floor at (0,±14)	errors: none	prototypes/slagpit/evidence/iteration-3-play.png
