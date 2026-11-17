@@ -37,6 +37,8 @@ window.CONFIG = {
   matchKills: { value: 20, min: 3, max: 50, step: 1 },         // first to this wins
   matchTime: { value: 300, min: 60, max: 900, step: 10 },      // s
   countdown: { value: 3, min: 0, max: 6, step: 0.5 },         // s before the fight
+  regenDelay: { value: 4, min: 0, max: 15, step: 0.5 },      // s without being hit before health comes back
+  regenRate: { value: 8, min: 0, max: 50, step: 1 },         // health per second while regenerating
   healthAmount: { value: 50, min: 10, max: 100, step: 5 },
   ammoFraction: { value: 0.5, min: 0.1, max: 1, step: 0.05 },  // of each gun's full reserve
   pickupRespawn: { value: 15, min: 3, max: 60, step: 1 },      // s

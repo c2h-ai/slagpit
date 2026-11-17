@@ -167,7 +167,7 @@ function newPlayer(sp) {
     yaw: sp.yaw, pitch: 0, grounded: true, hp: tune.maxHealth, alive: true, respawn: 0, killedBy: '',
     slide: 0, slideCd: 0, eye: tune.eyeHeight, weapon: settings.weapon, guns: fullGuns(),
     fireCd: 0, reload: 0, raise: 0, kick: 0, recoil: 0, bob: 0, flash: 0, zoom: false, lowWarned: false,
-    kills: 0, deaths: 0,
+    kills: 0, deaths: 0, sinceHurt: 99,
   };
 }
 function gunMag(p) { return p.guns[p.weapon]; }
@@ -208,6 +208,9 @@ function updatePlayer(p, dt, canFire) {
   const eyeTo = p.slide > 0 ? tune.slideEyeHeight : tune.eyeHeight;
   p.eye += (eyeTo - p.eye) * Math.min(1, dt * 14);
   p.bob += Math.hypot(p.vx, p.vz) * dt * (p.grounded && p.slide <= 0 ? 1.4 : 0);
+  // out of the fight for a while: health creeps back
+  p.sinceHurt += dt;
+  if (p.sinceHurt >= tune.regenDelay && p.hp < tune.maxHealth) p.hp = Math.min(tune.maxHealth, p.hp + tune.regenRate * dt);
   updateGun(p, dt, canFire);
 }
 function accel(e, wx, wz, max, a, dt) {

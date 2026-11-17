@@ -3,7 +3,7 @@
 // Date: 2026-11-17
 // Sound effects (Web Audio, synthesized) and the 2D overlay: HUD, title, pause, results.
 'use strict';
-const YELLOW = '#ffd34a', ORANGE = '#ff6a1a', BLOOD = '#c0201a', DIM = '#b8ab98';
+const TEAL = '#5ac8c0', YELLOW = '#ffd34a', ORANGE = '#ff6a1a', BLOOD = '#c0201a', DIM = '#b8ab98';
 
 // ---- Sound ----------------------------------------------------------------------------
 let noiseBuf = null;
@@ -109,10 +109,15 @@ function drawHud() {
     ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
   }
   // health, bottom left
-  panel(24, H - 86, 250, 62);
-  iconCross(52, H - 55, low ? BLOOD : '#e8e0d0');
-  text(String(Math.max(0, Math.ceil(p.hp))), 76, H - 58, 36, low ? BLOOD : '#f0e8da', 'left');
-  bar(150, H - 62, 108, 10, p.hp / tune.maxHealth, low ? BLOOD : ORANGE);
+  const regen = p.alive && p.hp < tune.maxHealth && p.sinceHurt >= tune.regenDelay;
+  panel(24, H - 112, 330, 88);
+  text('HEALTH', 44, H - 94, 15, DIM, 'left');
+  if (regen) text('REGENERATING', 334, H - 94, 15, TEAL, 'right');
+  iconCross(54, H - 58, low ? BLOOD : '#e8e0d0');
+  text(String(Math.max(0, Math.ceil(p.hp))), 78, H - 60, 44, low ? BLOOD : '#f0e8da', 'left');
+  text(`/ ${tune.maxHealth}`, 150, H - 54, 20, DIM, 'left');
+  bar(204, H - 66, 132, 16, p.hp / tune.maxHealth, low ? BLOOD : regen ? TEAL : ORANGE);
+  ctx.fillStyle = '#000'; for (let i = 1; i < 4; i++) ctx.fillRect(204 + 33 * i, H - 66, 2, 16); // quarter ticks
   // ammo, bottom right
   const lowAmmo = g.mag <= tune[k + 'Mag'] * tune.lowAmmo;
   panel(W - 274, H - 86, 250, 62);

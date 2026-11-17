@@ -132,7 +132,7 @@ function hurt(v, amount, by, head) {
   if (!v.alive || state.phase !== 'fight') return;
   v.hp -= amount;
   if (!v.isPlayer) v.alert = by;
-  if (v.isPlayer) { state.hurt.push({ ang: angleTo(v, by) - v.yaw, t: 1 }); state.redFlash = 0.25; sfx('hurt'); }
+  if (v.isPlayer) { v.sinceHurt = 0; state.hurt.push({ ang: angleTo(v, by) - v.yaw, t: 1 }); state.redFlash = 0.25; sfx('hurt'); }
   if (by.isPlayer) { v.barT = tune.hpBarTime; state.hitmark = 0.18; state.hitHead = head; sfx(head ? 'head' : 'hit'); }
   if (v.hp > 0) return;
   v.alive = false; v.deaths++; v.deathT = 0;
