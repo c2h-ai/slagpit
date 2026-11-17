@@ -1,0 +1,48 @@
+time	2026-11-17 11:00:46
+keep	lines	0	pinned	0
+briefword	first-person	unlisted
+checklist	L1	unlisted	-	Look: 어둡고 대비 강한 Quake풍 레트로 3D. 거친 저해상도 텍스처(nearest 필터), 각진 브러시형 지형. 배경은 짙은 갈색·녹슨 회색의 좁은 명도대, 플레이어 무기와 봇은 밝게. 팔레트: 바닥/벽 녹슨 갈색, 위협(봇) 핏빛 주황 눈 발광, 강조 유황빛 노랑(픽업·히트마커), 그림자는 차가운 청록, 조명은 따뜻한 주황. 디테일은 무기 모델과 봇 실루엣에, 벽은 단순하게. 시그니처: 벽에 걸린 용암 홈이 깜빡이며 아레나를 붉게 비춤. Every figure drawn, no emoji, no plain circles.	
+checklist	L2	unlisted	-	References: Krunker.io (빠른 슬라이드·홉 이동, 짧은 매치, 즉시 리스폰), Quake / Dusk / ULTRAKILL (어둡고 대비 강한 레트로 룩, 거침없는 속도)	
+checklist	L3	unlisted	-	View: 3D · Camera: first person, mouse-look with no smoothing	
+checklist	F1	unlisted	-	1인칭 이동: 걷기·점프·슬라이드, 슬라이드-점프 속도 유지	
+checklist	F2	unlisted	-	무기 3종(라이플·샷건·저격총), 각자 반동·섬광·소리, 탄창+예비탄, 재장전, 탄 부족 경고음	
+checklist	F3	unlisted	-	히트마커·킬 사운드·피격 방향 표시	
+checklist	F4	unlisted	-	봇 5명, 3 enemy kinds each attacking differently: 돌진형(샷건), 거리 유지 저격형, 맷집형 — 각자 다른 실루엣, 난이도별 반응 지연·명중률, 시야 판정	
+checklist	F5	unlisted	-	대칭형 아레나 1개: 순환 동선, 엄폐, 높낮이, 체력·탄약 픽업	
+checklist	F6	unlisted	-	스코어보드·킬피드·매치 타이머, 결과 화면과 즉시 재대결	
+checklist	F7	unlisted	-	일시정지 화면 마우스 감도 설정	
+checklist	M1	unlisted	-	타이틀에서 봇 난이도(쉬움/보통/어려움)와 무기(라이플·샷건·저격총)를 고른다 → 클릭 시 포인터 잠금, 아레나 구석 스폰.	
+checklist	M2	unlisted	-	3초 카운트다운 동안 걷고 점프해보며 Shift 슬라이드를 화면 힌트로 배운다 → 첫 봇이 회랑 끝에서 나타나 사격, 화면 가장자리 피격 방향 표시 → 맞추면 히트마커+틱 소리, 처치 시 킬 사운드와 킬피드 → 슬라이드-점프로 다음 봇에게 돌진하며 속도가 붙는 순간이 첫 보상.	
+checklist	C1	unlisted	-	보통 난이도에서 1~2분 안에 봇 둘이 동시에 노리는 진짜 접전 *(provisional)*.	
+checklist	C2	unlisted	-	봇은 사람 같은 반응 지연을 두고 가끔 빗나가며 벽 너머를 못 본다.	
+checklist	C3	unlisted	-	죽으면 2초 후 랜덤 스폰 지점에서 리스폰 — 그동안 상대가 점수를 쌓는 게 손실.	
+checklist	C4	unlisted	-	매치 후반엔 선두 봇이 더 공격적으로 플레이어를 노린다.	
+webgl	ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)
+browser	HeadlessChrome/157.0.0.0
+console	play	989	[.WebGL-0x11400503600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+scene	play	0	title
+scene	play	1	play
+digits	log	20px Impact, "Arial Black", sans-serif	proportional	3.213
+digits	log	16px Impact, "Arial Black", sans-serif	proportional	2.57
+digits	log	36px Impact, "Arial Black", sans-serif	proportional	5.783
+digits	log	22px Impact, "Arial Black", sans-serif	proportional	3.534
+digits	log	14px Impact, "Arial Black", sans-serif	proportional	2.249
+digits	log	26px Impact, "Arial Black", sans-serif	proportional	4.177
+digits	log	15px Impact, "Arial Black", sans-serif	proportional	2.41
+digits	log	96px Impact, "Arial Black", sans-serif	proportional	15.422
+measure	step-time	play	0.023	1.000	358
+lane	play	stop	6.0	674
+console	play	0	[.WebGL-0x11400503600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console	play	0	[.WebGL-0x11400503600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+uncaught	play	0
+text	play	canvas	76,647,127,676	48.7	16.96	inside	100
+text	play	canvas	1051,647,1087,676	48.7	16.96	inside	30
+text	play	canvas	1110,657,1153,675	29.8	9.15	inside	/ 120
+text	play	canvas	1208,647,1240,660	21.7	14.41	inside	RIFLE
+text	play	canvas	1215,670,1240,681	18.9	9.15	inside	1 2 3
+text	play	canvas	617,25,662,46	35.2	16.96	inside	4:58
+text	play	canvas	532,56,747,69	20.3	9.15	inside	YOU 0   ·   BOT Scrap 1   ·   FIRST TO 20
+text	play	canvas	1042,22,1246,35	20.3	15.70	inside	BOT Scrap  [Scrapper]  BOT Cinder
+screen	play	drawn
+shot	play	prototypes/slagpit/evidence/play.png
+responds	changed	196

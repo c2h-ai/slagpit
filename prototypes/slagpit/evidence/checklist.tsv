@@ -1,0 +1,16 @@
+L1	pass	evidence/play.png	dark brick and rust arena, nearest-filtered low-res textures, lava strips glowing orange, bright gun and HUD accents
+L2	pass	sim.js:195	slide boost and held-space hops (Krunker); dark retro look in play.png (Quake/Dusk)
+L3	pass	sim.js:179	first person camera turned straight from mouse deltas, no smoothing; play.png
+F1	pass	sim.js:195	walk, jump, slide with boost; jumping out of a slide keeps the speed
+F2	pass	sim.js:218	rifle, shotgun, sniper: own rate, kick, flash, synth sound, magazine and reserve, R reload, low-ammo beep
+F3	pass	bots.js:135	hit marker and tick, kill sound and KILL mark, red arc toward the attacker
+F4	pass	evidence/figures.png	5 bots of 3 kinds with distinct outlines; reaction delay and aim error per difficulty; line-of-sight check (sim.js:117)
+F5	pass	art.js:103	mirrored arena with centre hill, four towers, cover walls and crates; health on towers, ammo crates on the floor
+F6	pass	hud.js:138	TAB scoreboard, kill feed and timer (play.png), results screen with R rematch (bots.js:149)
+F7	pass	hud.js:170	pause screen changes mouse sensitivity with Left/Right
+M1	pass	hud.js:164	title picks bot skill and start gun; click starts and locks the pointer (index.html:97)
+M2	pass	hud.js:127	countdown with slide/jump hint while the player can move; bots then engage; feedback from F3
+C1	not_assessed	bots.js:24	the fight timing comes from play: no check measures when two bots first converge
+C2	pass	bots.js:51	reaction delay before firing, aim error grows with target speed, no shot without line of sight
+C3	pass	bots.js:139	respawn after 2 s at the spawn furthest from enemies (sim.js:248)
+C4	pass	bots.js:48	in the second half the leading bot weights the player more strongly as a target

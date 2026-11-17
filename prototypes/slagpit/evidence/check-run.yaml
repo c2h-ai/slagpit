@@ -1,0 +1,105 @@
+# The one-shot's small check (check-run/1).
+# Written by one-shot-check.sh --record: the results are /prototype's reading of
+# evidence/self-check.tsv; never edited by hand.
+kind: check-run/1
+engine: web
+browser: "HeadlessChrome/157.0.0.0"
+time: "2026-11-17 11:00:46"
+checks:
+  - id: boots
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: shot
+    result: pass
+    evidence:
+      - "evidence/play.png"
+  - id: outlines
+    result: pass
+    evidence:
+      - "evidence/figures.png"
+  - id: brief-words
+    result: pass
+    evidence:
+      - "evidence/brief-words.tsv"
+  - id: emoji
+    result: pass
+    evidence:
+      - "evidence/self-check.tsv"
+  - id: nearest-game
+    result: pass
+    evidence:
+      - "evidence/nearest-game.txt"
+brief_checklist:
+  - id: L1
+    result: pass
+    evidence: "evidence/play.png"
+    item: "Look: 어둡고 대비 강한 Quake풍 레트로 3D. 거친 저해상도 텍스처(nearest 필터), 각진 브러시형 지형. 배경은 짙은 갈색·녹슨 회색의 좁은 명도대, 플레이어 무기와 봇은 밝게. 팔레트: 바닥/벽 녹슨 갈색, 위협(봇) 핏빛 주황 눈 발광, 강조 유황빛 노랑(픽업·히트마커), 그림자는 차가운 청록, 조명은 따뜻한 주황. 디테일은 무기 모델과 봇 실루엣에, 벽은 단순하게. 시그니처: 벽에 걸린 용암 홈이 깜빡이며 아레나를 붉게 비춤. Every figure drawn, no emoji, no plain circles."
+  - id: L2
+    result: pass
+    evidence: "sim.js:195"
+    item: "References: Krunker.io (빠른 슬라이드·홉 이동, 짧은 매치, 즉시 리스폰), Quake / Dusk / ULTRAKILL (어둡고 대비 강한 레트로 룩, 거침없는 속도)"
+  - id: L3
+    result: pass
+    evidence: "sim.js:179"
+    item: "View: 3D · Camera: first person, mouse-look with no smoothing"
+  - id: F1
+    result: pass
+    evidence: "sim.js:195"
+    item: "1인칭 이동: 걷기·점프·슬라이드, 슬라이드-점프 속도 유지"
+  - id: F2
+    result: pass
+    evidence: "sim.js:218"
+    item: "무기 3종(라이플·샷건·저격총), 각자 반동·섬광·소리, 탄창+예비탄, 재장전, 탄 부족 경고음"
+  - id: F3
+    result: pass
+    evidence: "bots.js:135"
+    item: "히트마커·킬 사운드·피격 방향 표시"
+  - id: F4
+    result: pass
+    evidence: "evidence/figures.png"
+    item: "봇 5명, 3 enemy kinds each attacking differently: 돌진형(샷건), 거리 유지 저격형, 맷집형 — 각자 다른 실루엣, 난이도별 반응 지연·명중률, 시야 판정"
+  - id: F5
+    result: pass
+    evidence: "art.js:103"
+    item: "대칭형 아레나 1개: 순환 동선, 엄폐, 높낮이, 체력·탄약 픽업"
+  - id: F6
+    result: pass
+    evidence: "hud.js:138"
+    item: "스코어보드·킬피드·매치 타이머, 결과 화면과 즉시 재대결"
+  - id: F7
+    result: pass
+    evidence: "hud.js:170"
+    item: "일시정지 화면 마우스 감도 설정"
+  - id: M1
+    result: pass
+    evidence: "hud.js:164"
+    item: "타이틀에서 봇 난이도(쉬움/보통/어려움)와 무기(라이플·샷건·저격총)를 고른다 → 클릭 시 포인터 잠금, 아레나 구석 스폰."
+  - id: M2
+    result: pass
+    evidence: "hud.js:127"
+    item: "3초 카운트다운 동안 걷고 점프해보며 Shift 슬라이드를 화면 힌트로 배운다 → 첫 봇이 회랑 끝에서 나타나 사격, 화면 가장자리 피격 방향 표시 → 맞추면 히트마커+틱 소리, 처치 시 킬 사운드와 킬피드 → 슬라이드-점프로 다음 봇에게 돌진하며 속도가 붙는 순간이 첫 보상."
+  - id: C1
+    result: not_run
+    mark: not assessed
+    why: "the fight timing comes from play: no check measures when two bots first converge"
+    evidence: "bots.js:24"
+    item: "보통 난이도에서 1~2분 안에 봇 둘이 동시에 노리는 진짜 접전 *(provisional)*."
+  - id: C2
+    result: pass
+    evidence: "bots.js:51"
+    item: "봇은 사람 같은 반응 지연을 두고 가끔 빗나가며 벽 너머를 못 본다."
+  - id: C3
+    result: pass
+    evidence: "bots.js:139"
+    item: "죽으면 2초 후 랜덤 스폰 지점에서 리스폰 — 그동안 상대가 점수를 쌓는 게 손실."
+  - id: C4
+    result: pass
+    evidence: "bots.js:48"
+    item: "매치 후반엔 선두 봇이 더 공격적으로 플레이어를 노린다."
+measures:
+  - id: step-time
+    value: 1.000
+    unit: ms
+    by: browser
+    detail: "mean 0.023 ms, slowest 1.000 ms, 358 steps"
