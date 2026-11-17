@@ -17,6 +17,7 @@ After play: 20마리를 죽이는 목표가 좀 어려워 → 권장으로 해�
 After play: 좀 너무 어두운거 같아.
 After play: 처음엔 그게 뭔지 몰랐거든 좀 더 알게 하는 방법이 있을까? → 전부 넣어줘 (화살표, 첫 피격 설명, 카운트다운 안내)
 After play: 이 부분이 잘 눈에 안 띠어. 그니깐 내가 죽였으면 확실하게 눈에 띠면 좋겠어. (상단 점수 YOU 1 · BOT Cinder 2)
+After play: 정식 프로젝트로 키워서 인터넷으로 대전 하게 해줘봐 (호스팅은 걱정 안해도 돼; 개발 서버, 포트 2201)
 
 **Pitch:** 어두운 산업형 아레나에서 봇 5명과 벌이는 빠른 개인전 FPS. 슬라이드와 점프로 날아다니며 먼저 20킬. *(provisional)*
 
@@ -60,6 +61,7 @@ After play: 이 부분이 잘 눈에 안 띠어. 그니깐 내가 죽였으면 �
 - [x] 대칭형 아레나 1개: 순환 동선, 엄폐, 높낮이, 체력·탄약 픽업 (체력 팩: 탑 위 4개 + 바닥 2개)
 - [x] 스코어보드·킬피드·매치 타이머, 결과 화면과 즉시 재대결 (상단: 내 킬 수 크게 노란색, 킬 때 커짐)
 - [x] 내 킬 배너: KILLED <이름> · +1 · n / 목표, 화면 가장자리 금빛 번쩍임
+- [x] 인터넷 대전: 게임 서버(Node + WebSocket)가 판정, 빠른 대전과 친구 방(방 코드 링크), 최대 6명, 빈자리는 봇, 내 이동·사격은 즉시 예측, 다른 사람은 100ms 보간, 쏜 사람이 본 위치로 판정(지연 보정)
 - [x] 일시정지 화면 마우스 감도 설정
 
 ## Keep
@@ -69,7 +71,6 @@ After play: 이 부분이 잘 눈에 안 띠어. 그니깐 내가 죽였으면 �
 - Krunker.io의 이름, 아트, 캐릭터, UI *(guessed)*
 
 ## Out of scope
-- Online matches and lag compensation: needs a server: not built yet (built instead: bots in the seats, named as bots)
 - Matchmaking, ranks and seasons: needs a server: not built yet
 - A campaign of levels: grow it
 - Weapon upgrades and mods: add it as a feature

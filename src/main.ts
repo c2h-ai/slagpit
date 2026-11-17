@@ -7,20 +7,11 @@ import { params, clock, install } from './hook';
 import { ART } from './art';
 import { startAudio, setMuted, isMuted, sfx } from './audio';
 import * as R from './game/rules';
-import type { Box, Loose } from './game/types';
+import type { Loose } from './game/types';
+import { type Ent, type Ev, type Input, type Sim, GUNS, GUN_NAMES, KIND_NAMES, SHAPES, addHuman, buildWorld, createSim, makeRng, resetMatch, stepSim } from './game/sim';
+import { NetClient } from './net/client';
 
-// ==== carried from the one-shot's sim.js ====
-// The world: three.js setup, collision against the arena's brushes, hitscan, the player and
-// the guns.
-const GUNS = ['rifle', 'shotgun', 'sniper'];
-const GUN_NAMES = ['Rifle', 'Shotgun', 'Sniper'];
-// hitboxes: half width, body height, head height, head half width
-const SHAPES: Record<string, { w: number; h: number; hh: number; hw: number }> = {
-  player: { w: 0.35, h: 1.4, hh: 0.35, hw: 0.2 },
-  rusher: { w: 0.42, h: 1.3, hh: 0.35, hw: 0.2 },
-  lancer: { w: 0.3, h: 1.72, hh: 0.42, hw: 0.18 },
-  brute: { w: 0.62, h: 1.48, hh: 0.3, hw: 0.2 },
-};
+// ==== The world: three.js, the effects, and the match as this viewer sees it ====
 /** The three.js world and its pools; built once by initWorld. */
 const W3: Loose = {};
 
@@ -33,11 +24,10 @@ function initWorld(viewCanvas: HTMLCanvasElement): void {
   W3.camera = new T.PerspectiveCamera(tune.fov, 16 / 9, 0.05, 200);
   W3.camera.rotation.order = 'YXZ';
   W3.tx = ART.textures();
-  const a = ART.arena(W3.scene, W3.tx);
-  W3.arena = a;
-  W3.boxes = a.boxes.map((b: Loose): Box => ({ ...b, min: [b.minx, b.miny, b.minz], max: [b.maxx, b.maxy, b.maxz] }));
-  W3.pickupMeshes = a.pickups.map((p: Loose) => { const m = ART.pickup(p.kind); W3.scene.add(m); return m; });
-  W3.botModels = {};
+  W3.world = buildWorld();
+  W3.arena = ART.arena(W3.scene, W3.tx, W3.world.arena);
+  W3.pickupMeshes = W3.world.arena.pickups.map((p: Loose) => { const m = ART.pickup(p.kind); W3.scene.add(m); return m; });
+  W3.models = new Map<number, THREE.Group>();
   // view model: a second scene drawn over the world so the gun never clips into walls
   W3.vmScene = new T.Scene();
   W3.vmCamera = new T.PerspectiveCamera(60, 16 / 9, 0.01, 10);
@@ -56,50 +46,9 @@ function initWorld(viewCanvas: HTMLCanvasElement): void {
     const m = new T.Mesh(sg, new T.MeshBasicMaterial({ color: 0xff8a2a }));
     m.visible = false; W3.scene.add(m); W3.sparks.push({ mesh: m, t: 0, vx: 0, vy: 0, vz: 0 });
   }
-  // nodes the bots walk between, linked where a straight walk works
-  W3.nodes = a.nodes.map((n: Loose) => ({ ...n, y: heightAt(n.x, n.z, 0.3, 99), links: [] }));
-  W3.nodes.forEach((n: Loose, i: number) => W3.nodes.forEach((m: Loose, j: number) => { if (i !== j && walkable(n, m)) n.links.push(j); }));
 }
-
-// ---- Collision and rays: the rules in src/game/rules.ts, on this arena's brushes ----------
-const heightAt = (x: number, z: number, r: number, below: number): number => R.heightAt(W3.boxes, x, z, r, below);
-const walkable = (a: Loose, b: Loose): boolean => R.walkable(W3.boxes, a, b);
-const moveBody = (e: Loose, dt: number): void => R.moveBody(W3.boxes, e, dt, tune.gravity);
-const rayBox = R.rayBox;
-const rayWorld = (o: number[], d: number[], far: number): number => R.rayWorld(W3.boxes, o, d, far);
-const accel = R.accel;
 const lerp = R.lerp;
-function hitboxes(c: Loose): { min: number[]; max: number[]; head: boolean }[] {
-  const s = SHAPES[c.isPlayer ? 'player' : c.kind], k = c.slide > 0 ? 0.6 : 1, top = c.y + s.h * k;
-  return [
-    { min: [c.x - s.w, c.y, c.z - s.w], max: [c.x + s.w, top, c.z + s.w], head: false },
-    { min: [c.x - s.hw, top, c.z - s.hw], max: [c.x + s.hw, top + s.hh, c.z + s.hw], head: true },
-  ];
-}
-function eyeOf(c: Loose): number[] { return [c.x, c.y + (c.isPlayer ? c.eye : SHAPES[c.kind].h + SHAPES[c.kind].hh * 0.5), c.z]; }
-function dirFrom(yaw: number, pitch: number): number[] { const cp = Math.cos(pitch); return [-Math.sin(yaw) * cp, Math.sin(pitch), -Math.cos(yaw) * cp]; }
-function canSee(a: Loose, b: Loose): boolean {
-  const o = eyeOf(a), t = [b.x, b.y + 1.1, b.z], d = [t[0] - o[0], t[1] - o[1], t[2] - o[2]], len = Math.hypot(...d);
-  return rayWorld(o, d.map(v => v / len), len) >= len;
-}
-
-// One shot from `who`: pellets with spread, the nearest hit takes the damage.
-function fire(who: Loose, yaw: number, pitch: number, spread: number, damage: number, pellets: number, muzzle: number[] | null): void {
-  const o = eyeOf(who);
-  for (let p = 0; p < pellets; p++) {
-    const a = rng() * Math.PI * 2, m = Math.sqrt(rng()) * spread;
-    const d = dirFrom(yaw + Math.cos(a) * m, pitch + Math.sin(a) * m);
-    let far = rayWorld(o, d, 150), victim = null, head = false;
-    for (const c of combatants()) {
-      if (c === who || !c.alive) continue;
-      for (const hb of hitboxes(c)) { const t = rayBox(o, d, hb.min, hb.max, far); if (t < far) { far = t; victim = c; head = hb.head; } }
-    }
-    const hit = [o[0] + d[0] * far, o[1] + d[1] * far, o[2] + d[2] * far];
-    tracer(muzzle || o, hit);
-    sparks(hit, victim ? 0xff7a1a : 0x8a8070, victim ? 5 : 3);
-    if (victim) hurt(victim, damage * (head ? tune.headMult : 1), who, head);
-  }
-}
+let fxRng = makeRng(99); // sparks only: never gameplay
 function tracer(a: number[], b: number[]): void {
   const tr = W3.tracers.find((x: Loose) => x.t <= 0) || W3.tracers[0];
   const pos = tr.line.geometry.attributes.position;
@@ -109,9 +58,9 @@ function tracer(a: number[], b: number[]): void {
 function sparks(p: number[], color: number, n: number): void {
   for (let i = 0; i < n; i++) {
     const s = W3.sparks.find((x: Loose) => x.t <= 0); if (!s) return;
-    s.t = 0.35 + rng() * 0.2; s.mesh.visible = true; s.mesh.material.color.setHex(color);
+    s.t = 0.35 + fxRng() * 0.2; s.mesh.visible = true; s.mesh.material.color.setHex(color);
     s.mesh.position.set(p[0], p[1], p[2]);
-    s.vx = (rng() - 0.5) * 6; s.vy = rng() * 5; s.vz = (rng() - 0.5) * 6;
+    s.vx = (fxRng() - 0.5) * 6; s.vy = fxRng() * 5; s.vz = (fxRng() - 0.5) * 6;
   }
 }
 function updateFx(dt: number): void {
@@ -122,314 +71,162 @@ function updateFx(dt: number): void {
     if (s.t <= 0) s.mesh.visible = false;
   }
 }
+const angleTo = (a: Loose, b: Loose): number => Math.atan2(-(b.x - a.x), -(b.z - a.z));
 
-// ---- The player -----------------------------------------------------------------------
-function fullGuns(): { mag: number; reserve: number }[] { return GUNS.map(k => ({ mag: tune[k + 'Mag'], reserve: tune[k + 'Reserve'] })); }
-function newPlayer(sp: Loose): Loose {
-  return {
-    isPlayer: true, name: 'You', x: sp.x, y: 0, z: sp.z, px: sp.x, py: 0, pz: sp.z, vx: 0, vy: 0, vz: 0, r: 0.35,
-    yaw: sp.yaw, pitch: 0, grounded: true, hp: tune.maxHealth, alive: true, respawn: 0, killedBy: '',
-    slide: 0, slideCd: 0, eye: tune.eyeHeight, weapon: settings.weapon, guns: fullGuns(),
-    fireCd: 0, reload: 0, raise: 0, kick: 0, recoil: 0, bob: 0, flash: 0, zoom: false, lowWarned: false,
-    kills: 0, deaths: 0, sinceHurt: 99,
-  };
+// ---- The match: solo runs the sim here; online, the server runs it (src/net/client.ts) ----
+let sim: Sim | null = null;
+let net: NetClient | null = null;
+let meId = 0, lookYaw = 0, lookPitch = 0, inputSeq = 0, wasAlive = true;
+/** The bot skill of the match being played: online rooms play at the server's. */
+const matchDiff = (): number => (net ? net.diff : settings.diff);
+const killTarget = (): number => tune['matchKills' + matchDiff()]; // the first-to score
+function everyone(): Ent[] { return net ? net.all() : sim ? sim.all : []; }
+
+/** A fresh view of a match: the viewer's timers and lists, before the first step. */
+function newView(): void {
+  Object.assign(state, { feed: [], hurt: [], toldHurt: false, hurtLabel: 0, hitmark: 0, hitHead: false, killmark: 0, killName: '',
+    redFlash: 0, won: false, ranked: null, gained: '', phase: 'countdown', countdown: tune.countdown, timeLeft: tune.matchTime, pickups: [] });
+  fxRng = makeRng(99);
 }
-function gunMag(p: Loose): { mag: number; reserve: number } { return p.guns[p.weapon]; }
-function updatePlayer(p: Loose, dt: number, canFire: boolean): void {
-  p.px = p.x; p.py = p.y; p.pz = p.z;
-  if (!p.alive) { p.respawn -= dt; if (p.respawn <= 0) respawnPlayer(p); return; }
-  // look
-  const zoomK = p.zoom ? tune.zoomFov / tune.fov : 1;
-  p.yaw -= mouse.dx * tune.sensitivity * zoomK; p.pitch -= mouse.dy * tune.sensitivity * zoomK;
+/** Points the view at the current match: me is "the player", everyone else is "the others". */
+function refreshView(): void {
+  const all = everyone();
+  for (const e of all) (e as Loose).isPlayer = e.id === meId;
+  const me = all.find(e => e.id === meId);
+  state.all = all;
+  state.player = me ?? state.player;
+  state.bots = all.filter(e => e.id !== meId);
+  if (sim) { state.phase = sim.phase; state.countdown = sim.countdown; state.timeLeft = sim.timeLeft; state.pickups = sim.pickups; }
+  else if (net) {
+    state.phase = net.phase; state.countdown = net.countdown; state.timeLeft = net.timeLeft;
+    state.pickups = W3.world.arena.pickups.map((p: Loose, i: number) => ({ ...p, cd: net!.pickups[i] ? 1 : 0 }));
+  }
+  state.score = me ? me.kills : 0;
+}
+function startSolo(): void {
+  if (net) { net.close(); net = null; }
+  sim = createSim(tune, seed, settings.diff, 6);
+  const me = addHuman(sim, 'You', settings.weapon);
+  resetMatch(sim); // the bots take the seats around the player, in roster order
+  meId = me.id; lookYaw = me.yaw; lookPitch = 0; wasAlive = true;
+  newView(); refreshView();
+}
+function startOnline(room: string): void {
+  if (net) net.close();
+  sim = null;
+  const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
+  net = new NetClient(url, room, playerName(), settings.weapon, tune);
+  meId = 0; wasAlive = true;
+  newView(); refreshView();
+}
+function playerName(): string {
+  try { const n = localStorage.getItem('slagpit.name'); if (n) return n; } catch { /* storage blocked */ }
+  const n = 'Player ' + (100 + Math.floor(Math.random() * 900)); // a label, not gameplay
+  try { localStorage.setItem('slagpit.name', n); } catch { /* storage blocked */ }
+  return n;
+}
+
+/** This step's controls from the keys and the mouse; the look is the page's, sent as absolute angles. */
+function readInput(me: Ent | undefined): Input {
+  const zoomK = me?.zoom ? tune.zoomFov / tune.fov : 1;
+  lookYaw -= mouse.dx * tune.sensitivity * zoomK; lookPitch -= mouse.dy * tune.sensitivity * zoomK;
   mouse.dx = mouse.dy = 0;
-  if (down.has('ArrowLeft')) p.yaw += tune.keyTurn * dt * zoomK;
-  if (down.has('ArrowRight')) p.yaw -= tune.keyTurn * dt * zoomK;
-  if (down.has('ArrowUp')) p.pitch += tune.keyTurn * 0.6 * dt * zoomK;
-  if (down.has('ArrowDown')) p.pitch -= tune.keyTurn * 0.6 * dt * zoomK;
-  p.recoil = Math.max(0, p.recoil - dt * 0.6);
-  p.pitch = Math.max(-1.5, Math.min(1.5, p.pitch));
-  // move
-  const f = (down.has('KeyW') ? 1 : 0) - (down.has('KeyS') ? 1 : 0), s = (down.has('KeyD') ? 1 : 0) - (down.has('KeyA') ? 1 : 0);
-  let wx = -Math.sin(p.yaw) * f + Math.cos(p.yaw) * s, wz = -Math.cos(p.yaw) * f - Math.sin(p.yaw) * s;
-  const wl = Math.hypot(wx, wz); if (wl > 0) { wx /= wl; wz /= wl; }
-  const speed = Math.hypot(p.vx, p.vz);
-  p.slideCd -= dt;
-  if ((pressed('ShiftLeft') || pressed('ShiftRight') || pressed('KeyC')) && p.grounded && speed > tune.slideMinSpeed && p.slideCd <= 0) {
-    p.slide = tune.slideTime; p.slideCd = tune.slideTime + tune.slideCooldown;
-    p.vx += p.vx / speed * tune.slideBoost; p.vz += p.vz / speed * tune.slideBoost;
-    sfx('slide');
-  }
-  if (p.slide > 0) p.slide -= dt;
-  if (p.grounded && down.has('Space')) { // held space hops on landing: speed carries
-    p.vy = tune.jumpSpeed; p.grounded = false; p.slide = 0; sfx('jump');
-  } else if (p.grounded) {
-    const fr = p.slide > 0 ? tune.slideFriction : tune.friction;
-    const k = Math.max(0, 1 - fr * dt); p.vx *= k; p.vz *= k;
-    if (p.slide <= 0) accel(p, wx, wz, tune.walkSpeed, tune.groundAccel, dt);
-  } else accel(p, wx, wz, tune.airSpeed, tune.airAccel, dt);
-  moveBody(p, dt);
-  p.x = Math.max(-31.6, Math.min(31.6, p.x)); p.z = Math.max(-31.6, Math.min(31.6, p.z));
-  const eyeTo = p.slide > 0 ? tune.slideEyeHeight : tune.eyeHeight;
-  p.eye += (eyeTo - p.eye) * Math.min(1, dt * 14);
-  p.bob += Math.hypot(p.vx, p.vz) * dt * (p.grounded && p.slide <= 0 ? 1.4 : 0);
-  // out of the fight for a while: health creeps back
-  p.sinceHurt += dt;
-  if (p.sinceHurt >= tune.regenDelay && p.hp < tune.maxHealth) p.hp = Math.min(tune.maxHealth, p.hp + tune.regenRate * dt);
-  updateGun(p, dt, canFire);
-}
-function updateGun(p: Loose, dt: number, canFire: boolean): void {
-  p.fireCd -= dt; p.kick = Math.max(0, p.kick - dt * 5); p.flash -= dt; p.raise = Math.max(0, p.raise - dt);
-  for (let i = 0; i < 3; i++) if (pressed('Digit' + (i + 1)) && p.weapon !== i) switchGun(p, i);
-  if (pressed('KeyQ')) switchGun(p, (p.weapon + 1) % 3);
-  const k = GUNS[p.weapon], g = gunMag(p), magMax = tune[k + 'Mag'];
-  p.zoom = k === 'sniper' && down.has('Mouse2') && p.reload <= 0 && p.raise <= 0;
-  if (p.reload > 0) {
-    p.reload -= dt;
-    if (p.reload <= 0) { const n = Math.min(magMax - g.mag, g.reserve); g.mag += n; g.reserve -= n; p.lowWarned = false; sfx('reloaded'); }
-    return;
-  }
-  if (pressed('KeyR') && g.mag < magMax && g.reserve > 0) { startReload(p); return; }
-  if (!canFire || p.raise > 0) return;
-  if (down.has('Mouse0') && p.fireCd <= 0) {
-    if (g.mag <= 0) {
-      if (g.reserve > 0) startReload(p); else if (pressed('Mouse0')) sfx('empty');
-      return;
-    }
-    g.mag--; p.fireCd = tune[k + 'Rate']; p.flash = 0.05;
-    const spread = k === 'sniper' ? (p.zoom ? tune.sniperSpread : tune.sniperHipSpread) : tune[k + 'Spread'] * (p.grounded ? 1 : 1.6);
-    fire(p, p.yaw, p.pitch + p.recoil, spread, tune[k + 'Damage'], k === 'shotgun' ? tune.shotgunPellets : 1, null);
-    p.recoil += tune[k + 'Kick']; p.kick = 1;
-    sfx(k);
-    if (g.mag <= magMax * tune.lowAmmo && g.mag > 0 && !p.lowWarned) { p.lowWarned = true; sfx('low'); }
-    if (g.mag === 0) sfx('empty');
-  }
-}
-function startReload(p: Loose): void { p.reload = tune[GUNS[p.weapon] + 'Reload']; p.zoom = false; sfx('reload'); }
-function switchGun(p: Loose, i: number): void { p.weapon = i; p.reload = 0; p.raise = tune.switchTime; p.fireCd = 0; p.lowWarned = false; sfx('switch'); }
-function respawnPlayer(p: Loose): void {
-  const sp = farSpawn();
-  Object.assign(p, { x: sp.x, y: 0, z: sp.z, px: sp.x, py: 0, pz: sp.z, vx: 0, vy: 0, vz: 0, yaw: sp.yaw, pitch: 0, hp: tune.maxHealth,
-    alive: true, slide: 0, reload: 0, raise: tune.switchTime, guns: fullGuns(), recoil: 0 });
-}
-// the spawn point furthest from every living enemy
-function farSpawn(exclude?: Loose): Loose {
-  let best = null, bestD = -1;
-  for (const sp of W3.arena.spawns) {
-    let d = Infinity;
-    for (const c of combatants()) if (c !== exclude && c.alive) d = Math.min(d, Math.hypot(c.x - sp.x, c.z - sp.z));
-    d += rng() * 6;
-    if (d > bestD) { bestD = d; best = sp; }
-  }
-  return best;
-}
-
-// ==== carried from the one-shot's bots.js ====
-// The bots, damage and kills, pickups, the match clock, and moving the 3D figures to match
-// the simulation each frame.
-const ROSTER: [string, string][] = [['rusher', 'Cinder'], ['lancer', 'Lance'], ['brute', 'Furnace'], ['rusher', 'Scrap'], ['lancer', 'Pike']];
-const KIND_NAMES: Record<string, string> = { rusher: 'Scrapper', lancer: 'Lancer', brute: 'Furnace' };
-
-function combatants(): Loose[] { return state.all; }
-function newBot([kind, name]: [string, string], i: number): Loose {
-  if (!W3.botModels[i]) { W3.botModels[i] = ART.bot(kind, W3.tx); W3.scene.add(W3.botModels[i]); }
-  const sp = W3.arena.spawns[[1, 5, 7, 9, 11][i]]; // the far side from the player's first spawn
+  if (down.has('ArrowLeft')) lookYaw += tune.keyTurn * STEP * zoomK;
+  if (down.has('ArrowRight')) lookYaw -= tune.keyTurn * STEP * zoomK;
+  if (down.has('ArrowUp')) lookPitch += tune.keyTurn * 0.6 * STEP * zoomK;
+  if (down.has('ArrowDown')) lookPitch -= tune.keyTurn * 0.6 * STEP * zoomK;
+  lookPitch = Math.max(-1.5, Math.min(1.5, lookPitch));
+  let weapon = -1;
+  for (let i = 0; i < 3; i++) if (pressed('Digit' + (i + 1))) weapon = i;
   return {
-    kind, name: 'BOT ' + name, model: W3.botModels[i], x: sp.x, y: 0, z: sp.z, px: sp.x, py: 0, pz: sp.z,
-    vx: 0, vy: 0, vz: 0, r: SHAPES[kind].w, yaw: sp.yaw, grounded: true, slide: 0,
-    hp: tune[kind + 'Hp'], alive: true, respawn: 0, deathT: 0, kills: 0, deaths: 0,
-    target: null, alert: null, react: 0, think: rng() * 0.25, fireCd: 0, burst: 0, flash: 0,
-    strafe: rng() < 0.5 ? 1 : -1, strafeT: 1, stuck: 0, node: -1, prevNode: -1, last: null, lastT: 99, anim: 0,
+    seq: ++inputSeq, f: (down.has('KeyW') ? 1 : 0) - (down.has('KeyS') ? 1 : 0), s: (down.has('KeyD') ? 1 : 0) - (down.has('KeyA') ? 1 : 0),
+    jump: down.has('Space'), slide: pressed('ShiftLeft') || pressed('ShiftRight') || pressed('KeyC'),
+    fire: down.has('Mouse0'), firePressed: pressed('Mouse0'), reload: pressed('KeyR'), weapon, next: pressed('KeyQ'), zoom: down.has('Mouse2'),
+    yaw: lookYaw, pitch: lookPitch,
   };
 }
-const diffTune = (n: string): number => tune[n + settings.diff];
-const killTarget = (): number => diffTune('matchKills'); // the first-to score for the picked bot skill
 
-function updateBot(b: Loose, dt: number): void {
-  b.px = b.x; b.py = b.y; b.pz = b.z; b.flash -= dt; b.barT = (b.barT || 0) - dt;
-  if (!b.alive) {
-    b.deathT += dt; b.respawn -= dt;
-    if (b.respawn <= 0) {
-      const sp = farSpawn(b);
-      Object.assign(b, { x: sp.x, y: 0, z: sp.z, px: sp.x, py: 0, pz: sp.z, vx: 0, vy: 0, vz: 0, yaw: sp.yaw,
-        hp: tune[b.kind + 'Hp'], alive: true, target: null, alert: null, node: -1, lastT: 99 });
-    }
-    return;
+/** One step of the match for this viewer. idle: the player's hands are off (paused online). */
+function stepMatch(dt: number, idle = false): void {
+  const me = everyone().find(e => e.id === meId);
+  const inp = idle ? { ...readInput(me), f: 0, s: 0, jump: false, slide: false, fire: false, firePressed: false, reload: false, weapon: -1, next: false, zoom: false } : readInput(me);
+  let evs: Ev[] = [];
+  if (sim) { sim.events = []; stepSim(sim, dt, new Map([[meId, inp]])); evs = sim.events; }
+  else if (net) {
+    evs = net.step(inp);
+    if (net.meId && !meId) { meId = net.meId; }
+    if (net.respawned && net.me) { lookYaw = net.me.yaw; lookPitch = 0; net.respawned = false; }
+    if (net.phase === 'countdown' && scene === 'results') { newView(); scene = 'play'; }
   }
-  // pick a target a few times a second: the nearest seen, the player weighted nearer
-  b.think -= dt;
-  if (b.think <= 0) {
-    b.think = 0.25;
-    let best = null, bestS = Infinity;
-    const lead = leader(), late = state.timeLeft < tune.matchTime * 0.5 || (lead && lead.kills >= killTarget() * 0.5);
-    for (const c of state.all) {
-      if (c === b || !c.alive) continue;
-      const dx = c.x - b.x, dz = c.z - b.z, d = Math.hypot(dx, dz);
-      if (d > tune.botSight) continue;
-      const ahead = Math.cos(angleTo(b, c) - b.yaw) > -0.2; // about 160 degrees of view
-      if (!(ahead || d < tune.botHearing || c === b.alert) || !canSee(b, c)) continue;
-      let s = d;
-      if (c.isPlayer) s *= late && lead === b ? tune.leaderBias : tune.botPlayerBias;
-      if (s < bestS) { bestS = s; best = c; }
-    }
-    if (best !== b.target) { b.target = best; b.react = diffTune('botReact') + rng() * 0.15; }
+  refreshView();
+  const p = state.player;
+  if (p && sim) { // solo: a respawn faces the player the way the spawn faces
+    if (p.alive && !wasAlive) { lookYaw = p.yaw; lookPitch = 0; }
+    wasAlive = p.alive;
   }
-  const t = b.target && b.target.alive ? b.target : null;
-  if (!t) b.target = null;
-  let wx = 0, wz = 0, faceYaw = b.yaw;
-  b.strafeT -= dt; if (b.strafeT <= 0) { b.strafe = -b.strafe; b.strafeT = 0.8 + rng() * 1.4; }
-  if (t) {
-    b.last = { x: t.x, z: t.z }; b.lastT = 0;
-    const d = Math.hypot(t.x - b.x, t.z - b.z); faceYaw = angleTo(b, t);
-    const fx = -Math.sin(faceYaw), fz = -Math.cos(faceYaw), sx = Math.cos(faceYaw), sz = -Math.sin(faceYaw);
-    let fwd = 0, side = b.strafe;
-    if (b.kind === 'rusher') fwd = d > 4 ? 1 : 0;
-    else if (b.kind === 'lancer') fwd = d < 14 ? -1 : d > 30 ? 1 : 0;
-    else { fwd = d > 10 ? 0.7 : 0; side *= 0.4; }
-    wx = fx * fwd + sx * side; wz = fz * fwd + sz * side;
-    shootAt(b, t, d, dt);
-  } else {
-    b.lastT += dt;
-    let goal = null;
-    if (b.last && b.lastT < 3) goal = b.last;
-    else {
-      if (b.node < 0) b.node = nearestNode(b);
-      const n = W3.nodes[b.node];
-      if (Math.hypot(n.x - b.x, n.z - b.z) < 1.2) {
-        const links = n.links.filter((j: number) => j !== b.prevNode);
-        b.prevNode = b.node; b.node = links.length ? links[Math.floor(rng() * links.length)] : n.links[0] ?? b.node;
+  showEvents(evs);
+  tickView(dt);
+}
+
+/** Sound, effects and HUD marks for what happened this step, as this viewer should see it. */
+function showEvents(evs: Ev[]): void {
+  const all = everyone(), byId = (id: number): Loose => all.find(e => e.id === id);
+  const p = state.player, heard = new Set<number>();
+  for (const ev of evs) {
+    switch (ev.k) {
+      case 'shot': {
+        const who = byId(ev.id);
+        tracer(ev.from, ev.to); sparks(ev.to, ev.hit ? 0xff7a1a : 0x8a8070, ev.hit ? 5 : 3);
+        if (heard.has(ev.id) || !who) break; // a shotgun's pellets: one sound
+        heard.add(ev.id);
+        if (ev.id === meId) sfx(GUNS[GUN_NAMES.indexOf(ev.gun)] ?? 'rifle');
+        else {
+          if (who.human) who.flash = 0.06;
+          const far = p ? Math.hypot(p.x - who.x, p.z - who.z) : 0;
+          sfx(who.kind === 'lancer' ? 'botRail' : 'botGun', Math.max(0.08, 1 - far / 45));
+        }
+        break;
       }
-      goal = W3.nodes[b.node];
-    }
-    const dx = goal.x - b.x, dz = goal.z - b.z, d = Math.hypot(dx, dz);
-    if (d > 0.5) { wx = dx / d; wz = dz / d; faceYaw = Math.atan2(-dx, -dz); }
-    else if (goal === b.last) b.lastT = 99;
-  }
-  // turn at a limited rate, then walk
-  let dy = faceYaw - b.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
-  const turn = tune.botTurn * dt; b.yaw += Math.max(-turn, Math.min(turn, dy));
-  const wl = Math.hypot(wx, wz), sp = tune[b.kind + 'Speed'];
-  if (wl > 0) { wx /= wl; wz /= wl; }
-  if (b.grounded) { const k = Math.min(1, 10 * dt); b.vx += (wx * sp - b.vx) * k; b.vz += (wz * sp - b.vz) * k; }
-  moveBody(b, dt);
-  b.x = Math.max(-31.4, Math.min(31.4, b.x)); b.z = Math.max(-31.4, Math.min(31.4, b.z));
-  if (b.hitWall && wl > 0) {
-    b.stuck += dt;
-    if (b.stuck > 0.4) { b.strafe = -b.strafe; if (b.grounded) b.vy = tune.jumpSpeed * 0.9; b.node = nearestNode(b); b.lastT = 99; b.stuck = 0; }
-  } else b.stuck = 0;
-  b.anim += Math.hypot(b.vx, b.vz) * dt * 1.6;
-}
-function shootAt(b: Loose, t: Loose, d: number, dt: number): void {
-  b.react -= dt; b.fireCd -= dt;
-  const aim = angleTo(b, t), off = Math.abs(Math.atan2(Math.sin(aim - b.yaw), Math.cos(aim - b.yaw)));
-  if (b.react > 0 || off > 0.25 || b.fireCd > 0) return;
-  if (b.kind === 'rusher' && d > tune.rusherRange) return;
-  const o = eyeOf(b), tgt = [t.x, t.y + (t.isPlayer && t.slide > 0 ? 0.6 : 1.0), t.z];
-  const pitch = Math.atan2(tgt[1] - o[1], Math.hypot(tgt[0] - o[0], tgt[2] - o[2]));
-  const moving = Math.hypot(t.vx, t.vz) + (t.grounded ? 0 : 4);
-  const err = diffTune('botAim') * (1 + moving / 10), dm = diffTune('botDamage');
-  const muzzle = muzzleOf(b);
-  if (b.kind === 'rusher') { fire(b, aim, pitch, 0.09 + err, tune.rusherDamage * dm, 6, muzzle); b.fireCd = tune.rusherRate; }
-  else if (b.kind === 'lancer') { fire(b, aim, pitch, err, tune.lancerDamage * dm, 1, muzzle); b.fireCd = tune.lancerRate; }
-  else {
-    fire(b, aim, pitch, err * 1.3, tune.bruteDamage * dm, 1, muzzle);
-    b.burst++; b.fireCd = b.burst < 5 ? 0.12 : tune.bruteRate; if (b.burst >= 5) b.burst = 0;
-  }
-  b.flash = 0.06;
-  const p = state.player, far = Math.hypot(p.x - b.x, p.z - b.z);
-  sfx(b.kind === 'lancer' ? 'botRail' : 'botGun', Math.max(0.08, 1 - far / 45));
-}
-function muzzleOf(b: Loose): number[] {
-  const u = b.model.userData, s = Math.sin(b.yaw), c = Math.cos(b.yaw), lx = u.flash.position.x, lz = u.flashZ;
-  return [b.x + lx * c + lz * s, b.y + u.flashY, b.z - lx * s + lz * c];
-}
-function angleTo(a: Loose, b: Loose): number { return Math.atan2(-(b.x - a.x), -(b.z - a.z)); }
-function nearestNode(b: Loose): number {
-  let best = 0, bd = Infinity;
-  W3.nodes.forEach((n: Loose, i: number) => { const d = Math.hypot(n.x - b.x, n.z - b.z) + Math.abs(n.y - b.y) * 4; if (d < bd) { bd = d; best = i; } });
-  return best;
-}
-function leader(): Loose { let l: Loose = null; for (const c of state.all) if (!l || c.kills > l.kills) l = c; return l; }
-
-// ---- Damage and kills -----------------------------------------------------------------
-function hurt(v: Loose, amount: number, by: Loose, head: boolean): void {
-  if (!v.alive || state.phase !== 'fight') return;
-  v.hp -= amount;
-  if (!v.isPlayer) v.alert = by;
-  if (v.isPlayer && !state.toldHurt) { state.toldHurt = true; state.hurtLabel = 2; }
-  if (v.isPlayer) { v.sinceHurt = 0; state.hurt.push({ ang: angleTo(v, by) - v.yaw, t: 1 }); state.redFlash = 0.25; sfx('hurt'); }
-  if (by.isPlayer) { v.barT = tune.hpBarTime; state.hitmark = 0.18; state.hitHead = head; sfx(head ? 'head' : 'hit'); }
-  if (v.hp > 0) return;
-  v.alive = false; v.deaths++; v.deathT = 0;
-  v.respawn = v.isPlayer ? tune.respawnTime : tune.botRespawn;
-  by.kills++;
-  const gun = by.isPlayer ? GUN_NAMES[by.weapon] : KIND_NAMES[by.kind];
-  state.feed.unshift({ text: `${by.name}  [${gun}]  ${v.name}`, mine: by.isPlayer || v.isPlayer, t: 4 });
-  if (state.feed.length > 5) state.feed.pop();
-  events.push({ type: 'kill', by: by.name, victim: v.name });
-  if (by.isPlayer) { state.killmark = 1.8; state.killName = v.name; state.score = by.kills; sfx('kill'); }
-  if (v.isPlayer) { v.killedBy = by.name; sfx('death'); }
-  if (R.reachedTarget(by.kills, killTarget())) endMatch();
-}
-function endMatch(): void {
-  const ranked = [...state.all].sort((a, b) => b.kills - a.kills);
-  const res = R.outcome(ranked, state.player.kills);
-  state.won = res.won;
-  state.ranked = ranked;
-  state.gained = res.gained;
-  state.phase = 'over'; scene = 'results';
-  sfx(state.won ? 'win' : 'lose');
-  if (document.pointerLockElement) document.exitPointerLock();
-  events.push({ type: 'end', won: state.won });
-}
-
-// ---- Pickups --------------------------------------------------------------------------
-function updatePickups(dt: number): void {
-  state.pickups.forEach((pk: Loose) => {
-    if (pk.cd > 0) { pk.cd -= dt; return; }
-    for (const c of state.all) {
-      if (!c.alive || Math.hypot(c.x - pk.x, c.z - pk.z) > 1.2 || Math.abs(c.y - pk.y) > 1.5) continue;
-      if (pk.kind === 'health') {
-        if (c.hp >= (c.isPlayer ? tune.maxHealth : tune[c.kind + 'Hp'])) continue;
-        c.hp = Math.min(c.isPlayer ? tune.maxHealth : tune[c.kind + 'Hp'], c.hp + tune.healthAmount);
-      } else {
-        if (!c.isPlayer || GUNS.every((k, i) => c.guns[i].reserve >= tune[k + 'Reserve'])) continue; // full: leave the crate
-        GUNS.forEach((k, i) => { const max = tune[k + 'Reserve']; c.guns[i].reserve = Math.min(max, c.guns[i].reserve + Math.ceil(max * tune.ammoFraction)); });
+      case 'hurt': {
+        const v = byId(ev.v), by = byId(ev.by);
+        if (ev.v === meId && v && by) {
+          if (!state.toldHurt) { state.toldHurt = true; state.hurtLabel = 2; }
+          state.hurt.push({ ang: angleTo(v, by) - v.yaw, t: 1 }); state.redFlash = 0.25; sfx('hurt');
+        }
+        if (ev.by === meId && v) { v.barT = tune.hpBarTime; state.hitmark = 0.18; state.hitHead = ev.head; sfx(ev.head ? 'head' : 'hit'); }
+        break;
       }
-      pk.cd = tune.pickupRespawn;
-      if (c.isPlayer) sfx('pickup');
-      break;
+      case 'kill': {
+        const v = byId(ev.v), by = byId(ev.by);
+        if (!v || !by) break;
+        const mine = ev.by === meId || ev.v === meId;
+        state.feed.unshift({ text: `${ev.by === meId ? 'You' : by.name}  [${ev.gun}]  ${ev.v === meId ? 'You' : v.name}`, mine, t: 4 });
+        if (state.feed.length > 5) state.feed.pop();
+        events.push({ type: 'kill', by: by.name, victim: v.name });
+        if (ev.by === meId) { state.killmark = 1.8; state.killName = v.name; sfx('kill'); }
+        if (ev.v === meId) sfx('death');
+        break;
+      }
+      case 'end': {
+        const ranked = ev.ranked.map(id => byId(id)).filter(Boolean);
+        const res = R.outcome(ranked.map((e: Loose) => ({ isPlayer: e.id === meId, kills: e.kills })), p ? p.kills : 0);
+        state.won = res.won; state.ranked = ranked; state.gained = res.gained;
+        scene = 'results';
+        sfx(state.won ? 'win' : 'lose');
+        if (document.pointerLockElement) document.exitPointerLock();
+        events.push({ type: 'end', won: state.won });
+        break;
+      }
+      case 'go': case 'tick': sfx(ev.k); break;
+      default: if ('id' in ev && ev.id === meId) sfx(ev.k);
     }
-  });
-}
-
-// ---- The match ------------------------------------------------------------------------
-function newMatch(): void {
-  state.all = [];
-  state.player = newPlayer(W3.arena.spawns[0]);
-  state.bots = ROSTER.map(newBot);
-  state.all = [state.player, ...state.bots];
-  Object.assign(state, {
-    phase: 'countdown', countdown: tune.countdown, timeLeft: tune.matchTime, feed: [], hurt: [], toldHurt: false, hurtLabel: 0, hitmark: 0, hitHead: false,
-    killmark: 0, redFlash: 0, won: false, ranked: null,
-    pickups: W3.arena.pickups.map((p: Loose) => ({ ...p, cd: 0 })),
-  });
-}
-function updateMatch(dt: number): void {
-  if (state.phase === 'countdown') {
-    state.countdown -= dt;
-    if (state.countdown <= 0) { state.phase = 'fight'; sfx('go'); }
-    else if (Math.ceil(state.countdown) !== Math.ceil(state.countdown + dt)) sfx('tick');
-  } else if (state.phase === 'fight') {
-    state.timeLeft -= dt;
-    if (state.timeLeft <= 0) { state.timeLeft = 0; endMatch(); return; }
   }
-  const fight = state.phase === 'fight';
-  updatePlayer(state.player, dt, fight);
-  if (fight) { state.bots.forEach((b: Loose) => updateBot(b, dt)); updatePickups(dt); }
-  else state.bots.forEach((b: Loose) => { b.px = b.x; b.py = b.y; b.pz = b.z; });
+}
+function tickView(dt: number): void {
   state.hitmark -= dt; state.hurtLabel -= dt; state.killmark -= dt; state.redFlash -= dt;
   state.hurt.forEach((h: Loose) => h.t -= dt); state.hurt = state.hurt.filter((h: Loose) => h.t > 0);
   state.feed.forEach((f: Loose) => f.t -= dt); state.feed = state.feed.filter((f: Loose) => f.t > 0);
+  for (const b of state.bots ?? []) b.barT = (b.barT || 0) - dt;
   updateFx(dt);
 }
 
@@ -440,8 +237,15 @@ function syncWorld(alpha: number, now: number): void {
   cam.rotation.set(p.pitch + p.recoil, p.yaw, p.alive ? 0 : 0.5);
   const fov = p.zoom ? tune.zoomFov : tune.fov;
   if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); }
+  const seen = new Set<number>();
   state.bots.forEach((b: Loose) => {
-    const m = b.model, u = m.userData;
+    seen.add(b.id);
+    let m = W3.models.get(b.id);
+    if (!m || m.userData.kind !== (b.human ? 'runner' : b.kind)) {
+      if (m) W3.scene.remove(m);
+      m = ART.bot(b.human ? 'runner' : b.kind, W3.tx); W3.scene.add(m); W3.models.set(b.id, m);
+    }
+    const u = m.userData;
     m.position.set(lerp(b.px, b.x, alpha), lerp(b.py, b.y, alpha), lerp(b.pz, b.z, alpha));
     m.rotation.set(0, b.yaw, 0);
     m.visible = b.alive || b.deathT < 1.2;
@@ -451,6 +255,7 @@ function syncWorld(alpha: number, now: number): void {
     u.flash.visible = b.flash > 0; u.flash.rotation.z = now * 40;
     if (u.belly) u.belly.material.color.setHSL(0.06, 1, 0.4 + 0.15 * Math.sin(now * 6));
   });
+  for (const [id, m] of W3.models) if (!seen.has(id)) { W3.scene.remove(m); W3.models.delete(id); }
   state.pickups.forEach((pk: Loose, i: number) => {
     const m = W3.pickupMeshes[i];
     m.visible = pk.cd <= 0; m.position.set(pk.x, pk.y + 0.45 + Math.sin(now * 2 + i) * 0.08, pk.z); m.rotation.y = now * 1.2 + i;
@@ -505,7 +310,7 @@ function drawHud(): void {
   const v3 = new THREE.Vector3();
   state.bots.forEach((b: Loose) => {
     if (!b.alive || !(b.barT > 0)) return;
-    const s = SHAPES[b.kind];
+    const s = SHAPES[b.human ? 'player' : b.kind];
     v3.set(b.x, b.y + s.h + s.hh + 0.35, b.z).project(W3.camera);
     if (v3.z > 1 || Math.abs(v3.x) > 1.1 || Math.abs(v3.y) > 1.1) return;
     const x = (v3.x + 1) / 2 * W, y = (1 - v3.y) / 2 * H, k = b.hp / tune[b.kind + 'Hp'];
@@ -615,7 +420,7 @@ function drawScores(cx: number, y: number): void {
   text('PLAYER', cx - 230, y + 24, 15, DIM, 'left'); text('KILLS', cx + 120, y + 24, 15, DIM, 'right'); text('DEATHS', cx + 230, y + 24, 15, DIM, 'right');
   rows.forEach((c, i) => {
     const yy = y + 60 + i * 34, col = c.isPlayer ? YELLOW : '#e8e0d0';
-    text(c.isPlayer ? 'YOU' : `${c.name}  (${KIND_NAMES[c.kind]})`, cx - 230, yy, 18, col, 'left');
+    text(c.isPlayer ? 'YOU' : c.human ? c.name : `${c.name}  (${KIND_NAMES[c.kind]})`, cx - 230, yy, 18, col, 'left');
     text(String(c.kills), cx + 120, yy, 18, col, 'right'); text(String(c.deaths), cx + 230, yy, 18, col, 'right');
   });
 }
@@ -633,13 +438,24 @@ function chooser(label: string, opts: string[], cur: number, y: number, active: 
 function drawTitle(): void {
   ctx.fillStyle = 'rgba(6,4,3,0.55)'; ctx.fillRect(0, 0, W, H);
   text(TITLE.toUpperCase(), W / 2, 130, 92, ORANGE);
-  text(`A deathmatch against five bots. First to ${killTarget()} kills (${DIFFS[settings.diff]}).`, W / 2, 200, 20, DIM);
-  panel(W / 2 - 340, 240, 680, 140, 0.7);
-  chooser('BOT SKILL', DIFFS, settings.diff, 285, settings.row === 0);
-  chooser('START GUN', GUN_NAMES, settings.weapon, 340, settings.row === 1);
-  CONTROLS.forEach((c, i) => text(c, W / 2, 420 + i * 26, 16, '#d8ccb8'));
+  text(settings.mode === 0 ? `A deathmatch against five bots. First to ${killTarget()} kills (${DIFFS[settings.diff]}).`
+    : `Online: up to ${tune.onlineSeats} people, bots fill the empty seats. First to ${tune['matchKills' + tune.onlineDiff]} kills (${DIFFS[tune.onlineDiff]}).`, W / 2, 200, 20, DIM);
+  panel(W / 2 - 340, 232, 680, 186, 0.7);
+  chooser('BOT SKILL', DIFFS, settings.diff, 272, settings.row === 0);
+  chooser('START GUN', GUN_NAMES, settings.weapon, 324, settings.row === 1);
+  chooser('MODE', MODES, settings.mode, 376, settings.row === 2);
+  if (settings.mode === 2) text(params.get('room') ? `Joins room ${params.get('room')!.toUpperCase()}` : 'Opens a new room: share the address it shows with friends', W / 2, 436, 15, YELLOW);
+  CONTROLS.forEach((c, i) => text(c, W / 2, 462 + i * 24, 15, '#d8ccb8'));
   text('Up/Down choose a row · Left/Right change it', W / 2, H - 92, 15, DIM);
   text('ENTER or CLICK to fight', W / 2, H - 56, 26, YELLOW);
+}
+/** Online, before the match shows or after it is lost: what is happening, and the way out. */
+function drawNetStatus(): void {
+  clear('#0b0806');
+  const n = net!;
+  text(n.status === 'connecting' ? 'CONNECTING' : 'OFFLINE', W / 2, H / 2 - 40, 48, ORANGE);
+  text(n.status === 'connecting' ? `Reaching the game server at ${location.host || 'this page'}...` : n.why || 'The connection closed.', W / 2, H / 2 + 14, 20, DIM);
+  text('P then T: back to the title', W / 2, H / 2 + 70, 18, YELLOW);
 }
 function drawPause(): void {
   ctx.fillStyle = 'rgba(6,4,3,0.7)'; ctx.fillRect(0, 0, W, H);
@@ -655,7 +471,7 @@ function drawResults(): void {
   const top = state.ranked[0];
   text(state.won ? `You took it with ${top.kills} kills.` : `${top.isPlayer ? 'You' : top.name} won with ${top.kills} kills.`, W / 2, 175, 20, DIM);
   drawScores(W / 2, 210);
-  text('R or ENTER: rematch   ·   T: title', W / 2, H - 60, 24, YELLOW);
+  text(net ? 'The next match starts in a few seconds   ·   T: title' : 'R or ENTER: rematch   ·   T: title', W / 2, H - 60, 24, YELLOW);
 }
 
 // ==== the one-shot's page script ====
@@ -746,21 +562,36 @@ addEventListener('blur', () => down.clear());
 // figures: every enemy kind and unit side by side, for the outline check (?scene=figures).
 // The checks look for play by name.
 let scene: string, state: Loose;
-const settings = { diff: 1, weapon: 0, row: 0 }; // the title's picks, kept between matches
+const settings = { diff: 1, weapon: 0, row: 0, mode: params.get('room') ? 2 : 0 }; // the title's picks, kept between matches
 function reset(): void {
   seed = Number(params.get('seed')) || (CONFIG.seed as number);
   // state.gained: the match's outcome, shown on the results screen.
   state = { t: 0, score: 0, gained: '' };
-  newMatch();
+  startSolo();
 }
-function startPlay(): void { reset(); scene = 'play'; }
+const MODES = ['Solo', 'Quick match', 'Friend room'];
+/** Starts the picked mode: solo here, or online on this page's server. */
+function startPlay(): void {
+  seed = Number(params.get('seed')) || (CONFIG.seed as number);
+  state = { t: 0, score: 0, gained: '' };
+  if (settings.mode === 0) startSolo();
+  else {
+    let room = '';
+    if (settings.mode === 2) {
+      room = (params.get('room') || Math.random().toString(36).slice(2, 7)).toUpperCase(); // a code to share, not gameplay
+      history.replaceState(null, '', `?room=${room}`);
+    }
+    startOnline(room);
+  }
+  scene = 'play';
+}
 let figScene: THREE.Scene | null = null, figCam: THREE.PerspectiveCamera | null = null;
 function buildFigures(): void {
   const T = THREE; figScene = new T.Scene(); figScene.background = new T.Color(0x0b0806);
   figScene.add(new T.HemisphereLight(0x5a8a94, 0x2a1408, 1.4));
   const l = new T.PointLight(0xff7a2a, 30, 20, 1); l.position.set(0, 4, 4); figScene.add(l);
   const fl = new T.Mesh(new T.BoxGeometry(12, 0.2, 5), new T.MeshLambertMaterial({ map: W3.tx.floor })); fl.position.y = -0.1; figScene.add(fl);
-  ['rusher', 'lancer', 'brute'].forEach((k, i) => { const b = ART.bot(k, W3.tx); b.position.x = (i - 1) * 3; b.rotation.y = Math.PI + 0.35; figScene!.add(b); });
+  ['rusher', 'lancer', 'brute', 'runner'].forEach((k, i) => { const b = ART.bot(k, W3.tx); b.position.x = (i - 1.5) * 2.8; b.rotation.y = Math.PI + 0.35; figScene!.add(b); });
   figCam = new T.PerspectiveCamera(40, 16 / 9, 0.1, 100); figCam.position.set(0, 1.6, 8.5); figCam.lookAt(0, 1.1, 0);
 }
 const scenes: Record<string, { update(dt: number): void; draw(): void }> = {
@@ -770,19 +601,21 @@ const scenes: Record<string, { update(dt: number): void; draw(): void }> = {
       if (!figScene) buildFigures();
       W3.renderer.clear(); W3.renderer.render(figScene, figCam);
       ctx.clearRect(0, 0, W, H);
-      text('THE BOTS', W / 2, 50, 36, ORANGE);
-      [['Scrapper', 'rusher: shotgun, charges in'], ['Lancer', 'marksman: rail gun, keeps away'], ['Furnace', 'brute: rotary gun, soaks damage']]
-        .forEach(([n, d], i) => { text(n, W / 2 + (i - 1) * 380, H - 110, 30, '#f0e8da'); text(d, W / 2 + (i - 1) * 380, H - 76, 16, DIM); });
+      text('THE BOTS, AND OTHER PEOPLE ONLINE', W / 2, 50, 36, ORANGE);
+      [['Scrapper', 'rusher: shotgun'], ['Lancer', 'marksman: rail gun'], ['Furnace', 'brute: rotary gun'], ['Runner', 'a person online']]
+        .forEach(([n, d], i) => { text(n, W / 2 + (i - 1.5) * 300, H - 110, 28, '#f0e8da'); text(d, W / 2 + (i - 1.5) * 300, H - 76, 15, DIM); });
     },
   },
   title: {
     update(dt) {
       state.t += dt;
-      if (pressed('ArrowUp') || pressed('KeyW')) settings.row = 0;
-      if (pressed('ArrowDown') || pressed('KeyS')) settings.row = 1;
+      if (pressed('ArrowUp') || pressed('KeyW')) settings.row = Math.max(0, settings.row - 1);
+      if (pressed('ArrowDown') || pressed('KeyS')) settings.row = Math.min(2, settings.row + 1);
       const dx = (pressed('ArrowRight') || pressed('KeyD') ? 1 : 0) - (pressed('ArrowLeft') || pressed('KeyA') ? 1 : 0);
       if (dx) {
-        if (settings.row === 0) settings.diff = (settings.diff + dx + 3) % 3; else settings.weapon = (settings.weapon + dx + 3) % 3;
+        if (settings.row === 0) settings.diff = (settings.diff + dx + 3) % 3;
+        else if (settings.row === 1) settings.weapon = (settings.weapon + dx + 3) % 3;
+        else settings.mode = (settings.mode + dx + 3) % 3;
         sfx('switch');
       }
       if (pressed('Enter') || pressed('Space')) startPlay();
@@ -799,21 +632,27 @@ const scenes: Record<string, { update(dt: number): void; draw(): void }> = {
     update(dt) {
       if (pressed('KeyP') || pressed('Escape')) { scene = 'pause'; if (locked()) document.exitPointerLock(); return; }
       state.t += dt;
-      updateMatch(dt);
+      stepMatch(dt);
     },
-    draw() { syncWorld(ALPHA, clock.now()); renderWorld(); ctx.clearRect(0, 0, W, H); drawHud(); },
+    draw() {
+      if (net && (net.status !== 'playing' || !state.player)) { drawNetStatus(); return; }
+      syncWorld(ALPHA, clock.now()); renderWorld(); ctx.clearRect(0, 0, W, H); drawHud();
+      if (net && net.room) text(`ROOM ${net.room}`, 24, 104, 15, DIM, 'left');
+    },
   },
   pause: {
-    update() {
+    update(dt) {
+      if (net) stepMatch(dt, true); // online the match goes on while paused
       if (pressed('KeyP') || pressed('Escape')) scene = 'play';
-      if (pressed('KeyT')) { scene = 'title'; return; }
+      if (pressed('KeyT')) { if (net) { net.close(); net = null; } scene = 'title'; return; }
       const dx = (pressed('ArrowRight') ? 1 : 0) - (pressed('ArrowLeft') ? 1 : 0), c = CONFIG.sensitivity;
       if (dx) c.value = Math.max(c.min, Math.min(c.max, +(c.value + dx * 0.0002).toFixed(4)));
     },
     draw() { scenes.play.draw(); drawPause(); },
   },
   results: {
-    update() {
+    update(dt) {
+      if (net) { stepMatch(dt, true); if (pressed('KeyT')) { net.close(); net = null; scene = 'title'; } return; } // the room starts the next match itself
       if (pressed('KeyR') || pressed('Enter')) startPlay();
       else if (pressed('KeyT')) scene = 'title';
     },

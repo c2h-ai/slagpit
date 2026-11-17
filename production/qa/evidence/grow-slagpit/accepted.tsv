@@ -1,0 +1,171 @@
+browser	/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+time	2026-11-17 13:42:30
+render	cheap
+webgl	ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)
+ua	HeadlessChrome/157.0.0.0
+scene	0	title
+state	0	title	{"t":0,"score":0,"gained":"","feed":[],"hurt":[],"toldHurt":false,"hurtLabel":0,"hitmark":0,"hitHead":false,"killmark":0,"killName":"","redFlash":0,"won":false,"ranked":null,"phase":"countdown","count
+scene	1	play
+state	1	play	{"t":0,"score":0,"gained":"","feed":[],"hurt":[],"toldHurt":false,"hurtLabel":0,"hitmark":0,"hitHead":false,"killmark":0,"killName":"","redFlash":0,"won":false,"ranked":null,"phase":"countdown","count
+playinput	196	KeyW
+frame	3481	fffc85c5
+frame	3482	d140cb0
+frame	3483	e68de109
+frame	3484	418fed74
+frame	3485	5cd77a2c
+frame	3486	44b27a7d
+frame	3487	3018b875
+frame	3488	eb503060
+frame	3489	b0605cb
+frame	3490	dd1319f3
+frame	3491	b5c1ea77
+frame	3492	5237bac9
+frame	3493	9971bbbb
+frame	3494	3feeb0f7
+frame	3495	c1120717
+frame	3496	db3f2c81
+frame	3497	63d4a21c
+frame	3498	f2db0b07
+frame	3499	f0adf0bd
+frame	3500	a8ac9396
+frame	3501	4fbe9564
+frame	3502	b4434bd1
+frame	3503	5b12783
+frame	3504	16d26ab1
+frame	3505	a6944684
+frame	3506	83468ed0
+frame	3507	609f4cf1
+frame	3508	e65dfac7
+frame	3509	6143d164
+frame	3510	e9d33802
+frame	3511	4c6789d8
+frame	3512	8003e7d1
+frame	3513	5109525d
+frame	3514	87dfaa6b
+frame	3515	2abfa41a
+frame	3516	b806f2a8
+frame	3517	6edaa2f7
+frame	3518	7f36c74e
+frame	3519	8c014517
+frame	3520	7cd4f471
+frame	3521	c5f01e6e
+frame	3522	ebea1054
+frame	3523	91b03549
+frame	3524	6177c7f8
+frame	3525	21398829
+frame	3526	2ee9fc5
+frame	3527	5095d8f3
+frame	3528	6132c2a
+frame	3529	af8a850a
+frame	3530	237bc011
+frame	3531	d9a04e28
+frame	3532	2e27d396
+frame	3533	cc6705a6
+frame	3534	d07d1741
+frame	3535	c8cc2405
+frame	3536	53901d7f
+frame	3537	f6d50db0
+frame	3538	a7ffde39
+frame	3539	cc683bfa
+frame	3540	c1026c00
+frame	3541	f4f98ab0
+frame	3542	2524fd01
+frame	3543	40331217
+frame	3544	29b9e315
+frame	3545	13d9d05
+frame	3546	7bc4a52c
+frame	3547	d5045132
+frame	3548	53ccc1c
+frame	3549	54dd49fa
+frame	3550	cb245242
+frame	3551	fc0aabb1
+frame	3552	8f1bbb3d
+frame	3553	e01fa496
+frame	3554	4a4e7605
+frame	3555	2bde19d1
+frame	3556	728c69ed
+frame	3557	c7d8e2f7
+frame	3558	3761eec9
+frame	3559	add3d611
+frame	3560	14a4c859
+frame	3561	a2f4f99c
+frame	3562	d0ccf364
+frame	3563	1c502b0a
+frame	3564	f3a22c8d
+frame	3565	78e152fc
+frame	3566	5254e429
+frame	3567	40cc08a2
+frame	3568	62a1c604
+frame	3569	73826ea6
+frame	3570	ce8ed8b9
+frame	3571	2ff8d2c
+frame	3572	50e0a36e
+frame	3573	f349238b
+frame	3574	e4277045
+frame	3575	3ece5b0b
+frame	3576	12bb701b
+frame	3577	fe1ee57f
+frame	3578	f6cd2c0b
+frame	3579	56b1e0d6
+frame	3580	8081d34e
+frame	3581	f936de3b
+frame	3582	b058a3d7
+frame	3583	25fb75ec
+frame	3584	bd066de7
+frame	3585	92766e6
+frame	3586	b30f40dd
+frame	3587	692fa037
+frame	3588	340266b0
+frame	3589	7a14b1c2
+frame	3590	c5c84a53
+frame	3591	ee97ce87
+frame	3592	19b96ef6
+frame	3593	fcb5fce4
+frame	3594	c8b37716
+frame	3595	3031c593
+frame	3596	adf72024
+frame	3597	459e4457
+frame	3598	4bd3e7d8
+frame	3599	514d490f
+frame	3600	6fca61c6
+state	3600	play	-
+digits	log	20px Impact, "Arial Black", sans-serif	proportional	3.213
+digits	log	15px Impact, "Arial Black", sans-serif	proportional	2.41
+digits	log	44px Impact, "Arial Black", sans-serif	proportional	7.068
+digits	log	36px Impact, "Arial Black", sans-serif	proportional	5.783
+digits	log	22px Impact, "Arial Black", sans-serif	proportional	3.534
+digits	log	14px Impact, "Arial Black", sans-serif	proportional	2.249
+digits	log	28px Impact, "Arial Black", sans-serif	proportional	4.498
+digits	log	34px Impact, "Arial Black", sans-serif	proportional	5.462
+digits	log	96px Impact, "Arial Black", sans-serif	proportional	15.422
+loop	log	none	no loop() step was marked
+first	log	none	no state.beat
+pressure	none	the game set no number state.margin in play
+steptime	3600	0.020	6.600
+frametime	60	9.5	124.1	2520	5	3
+done	3600	play	stop	60.0	3648
+console	0	[.WebGL-0x124004d4200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console	0	[.WebGL-0x124004d4200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console	0	[.WebGL-0x124004d4200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console	0	[.WebGL-0x124004d4200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+measured	1280x720
+text	play	canvas	45,620,85,632	20.3	9.15	inside	HEALTH
+text	play	canvas	80,641,100,677	59.6	3.40	inside	0
+text	play	canvas	150,657,190,674	27.1	9.15	inside	/ 100
+text	play	canvas	1051,647,1087,676	48.7	16.96	inside	30
+text	play	canvas	1110,657,1153,675	29.8	9.15	inside	/ 120
+text	play	canvas	1208,647,1240,660	21.7	14.41	inside	RIFLE
+text	play	canvas	1215,670,1240,681	18.9	9.15	inside	1 2 3
+text	play	canvas	616,28,664,51	37.9	16.96	inside	4:04
+text	play	canvas	609,62,671,73	18.9	9.15	inside	FIRST TO 15
+text	play	canvas	410,28,433,40	20.3	14.41	inside	YOU
+text	play	canvas	411,47,427,75	46.0	14.41	inside	0
+text	play	canvas	809,28,870,41	20.3	9.15	inside	BOT Scrap
+text	play	canvas	853,47,869,75	46.0	16.96	inside	6
+text	play	canvas	1047,22,1246,35	20.3	15.70	inside	BOT Scrap  [Scrapper]  BOT Lance
+text	play	canvas	1082,52,1245,65	20.3	14.39	inside	BOT Cinder  [Scrapper]  You
+text	play	canvas	498,315,783,343	46.0	16.26	inside	KILLED BY BOT Cinder
+text	play	canvas	576,367,704,386	27.1	8.78	inside	Respawning 0.4
+screen	3600	play	6e1e57e9	drawn
+uncaught	0
+shot	/Users/jinseungim/development/dev-game/new-game/production/qa/evidence/grow-slagpit/story.png	174691

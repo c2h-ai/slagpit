@@ -66,3 +66,6 @@ Bots: difficulty 0 easy, 1 normal, 2 hard
 - `rusherRange`: m: fires only this close
 - `bruteDamage`: per bullet, bursts of 5
 - `bruteRate`: s between bursts
+- `onlineSeats`: combatants in an online room; bots fill the seats no person has
+- `onlineDiff`: bot skill of online rooms (0 easy, 1 normal, 2 hard); sets the kill target too
+- `onlineRestart`: s on the results before an online room starts the next match

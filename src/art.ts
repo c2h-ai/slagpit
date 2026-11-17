@@ -2,7 +2,8 @@
 // brushes, the three bot kinds, the guns and the pickups. Dark rust, cold teal shadow, warm
 // lava light, sulphur-yellow accents.
 import * as THREE from 'three';
-import type { Loose, BoxSpec } from './game/types';
+import type { Loose } from './game/types';
+import type { Arena } from './game/arena';
 
 type RGB = [number, number, number];
 type Ctx2D = CanvasRenderingContext2D;
@@ -82,61 +83,24 @@ export const ART = (() => {
   }
 
   // The arena: symmetric, 64 m square, every solid brush stands on the floor.
-  function arena(scene: THREE.Scene, tx: Record<string, THREE.CanvasTexture>): Loose {
-    const A = 32, boxes: BoxSpec[] = [], lavaMats: THREE.MeshBasicMaterial[] = [], lights: THREE.PointLight[] = [];
+  // Draws the arena from its data (src/game/arena.ts) and lights it.
+  function arena(scene: THREE.Scene, tx: Record<string, THREE.CanvasTexture>, data: Arena): Loose {
+    const lavaMats: THREE.MeshBasicMaterial[] = [], lights: THREE.PointLight[] = [];
     const M = (k: string) => new T.MeshLambertMaterial({ map: tx[k] });
-    const mat = { floor: M('floor'), wall: M('wall'), metal: M('metal'), crate: M('crate') };
-    function add(x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, m: THREE.Material, solid = true): THREE.Mesh {
-      const mesh = new T.Mesh(boxGeo(x1 - x0, y1 - y0, z1 - z0), m);
-      mesh.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); scene.add(mesh);
-      if (solid) boxes.push({ minx: x0, maxx: x1, miny: y0, maxy: y1, minz: z0, maxz: z1 });
-      return mesh;
+    const mat: Record<string, THREE.Material> = { floor: M('floor'), wall: M('wall'), metal: M('metal'), crate: M('crate') };
+    for (const b of data.brushes) {
+      let m = mat[b.mat];
+      if (b.mat === 'lava') { const lm = new T.MeshBasicMaterial({ map: tx.lava, color: 0xffffff }); lavaMats.push(lm); m = lm; }
+      const mesh = new T.Mesh(boxGeo(b.maxx - b.minx, b.maxy - b.miny, b.maxz - b.minz), m);
+      mesh.position.set((b.minx + b.maxx) / 2, (b.miny + b.maxy) / 2, (b.minz + b.maxz) / 2); scene.add(mesh);
     }
-    function mx(x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, m: THREE.Material): void { add(x0, x1, y0, y1, z0, z1, m); add(-x1, -x0, y0, y1, z0, z1, m); }
-    function mz(x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, m: THREE.Material): void { add(x0, x1, y0, y1, z0, z1, m); add(x0, x1, y0, y1, -z1, -z0, m); }
-    function m4(x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, m: THREE.Material): void { mz(x0, x1, y0, y1, z0, z1, m); mz(-x1, -x0, y0, y1, z0, z1, m); }
-
-    add(-A, A, -1, 0, -A, A, mat.floor);
-    mz(-A - 1, A + 1, 0, 10, A, A + 1, mat.wall); mx(A, A + 1, 0, 10, -A, A, mat.wall);
-    // the central hill: a platform with stairs on the east and west and low cover north and south
-    add(-5, 5, 0, 2.4, -5, 5, mat.metal);
-    for (let k = 1; k <= 3; k++) mx(5 + (3 - k) * 1.2, 5 + (4 - k) * 1.2, 0, 0.6 * k, -2, 2, mat.metal);
-    mz(-5, 5, 2.4, 3.3, 4.4, 5, mat.wall);
-    // four corner towers, stairs running toward the middle, a parapet on the inner side
-    m4(22, A, 0, 3, 22, A, mat.wall);
-    for (let k = 1; k <= 4; k++) m4(24, 28, 0, 0.6 * k, 22 - (5 - k) * 1.2, 22 - (4 - k) * 1.2, mat.metal);
-    m4(22, 22.6, 3, 4, 25, A, mat.wall);
-    // cover: long walls, side walls, crates, pillars
-    mz(-6, 6, 0, 2.2, 19.5, 20.5, mat.wall);
-    mx(19.5, 20.5, 0, 2.2, -5, 5, mat.wall);
-    m4(11, 13.2, 0, 2.2, 7, 9.2, mat.crate);
-    m4(7, 8.4, 0, 1, 13, 14.4, mat.crate);
-    m4(18, 19.4, 0, 6, 9, 10.4, mat.wall);
-
-    // lava channels set into the walls and the floor: the signature light
-    const lavaMat = () => { const m = new T.MeshBasicMaterial({ map: tx.lava, color: 0xffffff }); lavaMats.push(m); return m; };
-    mz(-20, 20, 3, 3.5, A - 0.05, A, lavaMat()); mx(A - 0.05, A, 3, 3.5, -20, 20, lavaMat());
-    [[-1, 1, 7, 18], [-1, 1, -18, -7]].forEach(([a, b, c, d]) => { add(a, b, 0.005, 0.03, c, d, lavaMat(), false); add(c, d, 0.005, 0.03, a, b, lavaMat(), false); });
-    [[0, 4, A - 2], [0, 4, -A + 2], [A - 2, 4, 0], [-A + 2, 4, 0]].forEach(([x, y, z]) => {
-      const l = new T.PointLight(0xff5a1a, 9, 34, 1); l.position.set(x, y, z); scene.add(l); lights.push(l);
-    });
-    const top = new T.PointLight(0xffa050, 6, 26, 1); top.position.set(0, 7, 0); scene.add(top); lights.push(top);
+    for (const L of data.lights) {
+      const l = new T.PointLight(L.color, L.intensity, L.distance, 1); l.position.set(L.x, L.y, L.z); scene.add(l); lights.push(l);
+    }
     const hemi = new T.HemisphereLight(0x2f5560, 0x1a0e08, 1.1); scene.add(hemi);
     const sun = new T.DirectionalLight(0x8fa4b0, 0.5); sun.position.set(-10, 20, 6); scene.add(sun);
     scene.fog = new T.Fog(0x1a120e, 18, 80); scene.background = new T.Color(0x24180f); // a smoky ember sky
-
-    const spawns = [[26, 0], [-26, 0], [0, 26], [0, -26], [14, 26], [-14, 26], [14, -26], [-14, -26], [26, 14], [-26, -14], [26, -14], [-26, 14]]
-      .map(([x, z]) => ({ x, z, yaw: Math.atan2(x, z) }));
-    const pickups = [
-      ...[[26.5, 26.5], [-26.5, 26.5], [26.5, -26.5], [-26.5, -26.5]].map(([x, z]) => ({ kind: 'health', x, y: 3, z })),
-      ...[[0, 14], [0, -14]].map(([x, z]) => ({ kind: 'health', x, y: 0, z })), // on the floor, between the hill and the long walls
-      ...[[24, 0], [-24, 0], [0, 25], [0, -25], [0, 0]].map(([x, z]) => ({ kind: 'ammo', x, y: x === 0 && z === 0 ? 2.4 : 0, z })),
-    ];
-    const nodes = [[10, 0], [-10, 0], [0, 0], [14, 14], [-14, 14], [14, -14], [-14, -14], [0, 14], [0, -14], [0, 26], [0, -26],
-      [26, 0], [-26, 0], [14, 26], [-14, 26], [14, -26], [-14, -26], [26, 14], [-26, 14], [26, -14], [-26, -14],
-      [26, 16], [-26, 16], [26, -16], [-26, -16], [26.5, 26.5], [-26.5, 26.5], [26.5, -26.5], [-26.5, -26.5], [6, 24], [-6, 24], [6, -24], [-6, -24]]
-      .map(([x, z]) => ({ x, z }));
-    return { boxes, lavaMats, lights, hemi, sun, spawns, pickups, nodes };
+    return { lavaMats, lights, hemi, sun };
   }
 
   // ---- Figures: every bot kind has its own outline ----------------------------------------
@@ -182,6 +146,17 @@ export const ART = (() => {
       part(body, 0.1, 0.55, 0.1, c, 0.3, 1.4, -0.1, tx.body); part(body, 0.1, 0.55, 0.1, c, -0.3, 1.4, -0.1, tx.body);
       part(body, 0.07, 0.07, 1.5, 0x1d2126, 0.22, 1.25, -0.6); part(body, 0.12, 0.12, 0.3, 0x5a6670, 0.22, 1.33, -0.2);
       u.flashZ = -1.4; u.flashY = 1.25;
+    } else if (kind === 'runner') { // another person online: helmet with a teal visor, backpack, rifle
+      const c = 0x6b6a3a;
+      u.legs = [leg(body, -0.15, 0.15, 0.85, 0x3a3a24, tx.body), leg(body, 0.15, 0.15, 0.85, 0x3a3a24, tx.body)];
+      part(body, 0.56, 0.62, 0.34, c, 0, 1.17, 0, tx.body);
+      part(body, 0.46, 0.5, 0.22, 0x4a4a2a, 0, 1.2, 0.28, tx.body); // backpack
+      part(body, 0.38, 0.34, 0.38, 0x2e3a3a, 0, 1.66, 0, tx.body); // helmet
+      part(body, 0.46, 0.06, 0.46, 0x2e3a3a, 0, 1.52, 0); // helmet brim
+      glow(body, 0.32, 0.1, 0.02, 0, 1.66, -0.2, 0x5ac8c0); // visor
+      part(body, 0.13, 0.5, 0.13, c, 0.36, 1.2, -0.12, tx.body); part(body, 0.13, 0.5, 0.13, c, -0.36, 1.2, -0.12, tx.body);
+      part(body, 0.08, 0.1, 0.7, 0x24221f, 0.3, 1.05, -0.5);
+      u.flashZ = -0.9; u.flashY = 1.07;
     } else { // Furnace: wide and heavy, a glowing belly grate, tiny head, a rotary gun
       const c = 0x3e3934;
       u.legs = [leg(body, -0.3, 0.32, 0.55, 0x2a2622, tx.body), leg(body, 0.3, 0.32, 0.55, 0x2a2622, tx.body)];
@@ -196,7 +171,7 @@ export const ART = (() => {
       u.flashZ = -1.1; u.flashY = 0.95;
     }
     const flash = new T.Mesh(new T.PlaneGeometry(0.5, 0.5), new T.MeshBasicMaterial({ map: tx.flash, transparent: true, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide }));
-    flash.position.set(kind === 'lancer' ? 0.22 : kind === 'brute' ? 0.78 : 0.4, u.flashY, u.flashZ); flash.visible = false; body.add(flash);
+    flash.position.set(kind === 'lancer' ? 0.22 : kind === 'brute' ? 0.78 : kind === 'runner' ? 0.3 : 0.4, u.flashY, u.flashZ); flash.visible = false; body.add(flash);
     u.flash = flash; u.body = body; g.userData = u;
     return g;
   }
