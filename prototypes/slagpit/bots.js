@@ -233,7 +233,10 @@ function syncWorld(alpha, now) {
     m.visible = pk.cd <= 0; m.position.set(pk.x, pk.y + 0.45 + Math.sin(now * 2 + i) * 0.08, pk.z); m.rotation.y = now * 1.2 + i;
   });
   W3.arena.lavaMats.forEach((mt, i) => { const k = 0.8 + 0.2 * Math.sin(now * 3.1 + i * 1.7) + 0.05 * Math.sin(now * 17 + i); mt.color.setRGB(k, k, k); });
+  const br = tune.brightness;
   W3.arena.lights.forEach((l, i) => { l.intensity = (i === 4 ? 6 : 9) * (0.85 + 0.15 * Math.sin(now * 3.1 + i * 1.7)); });
+  W3.arena.hemi.intensity = 1.1 * br; W3.renderer.toneMappingExposure = br;
+  W3.scene.fog.near = 18 * br; W3.scene.fog.far = 80 * br;
   // the gun in the hand
   W3.guns.forEach((g, i) => { g.visible = p.alive && i === p.weapon && !p.zoom; });
   const g = W3.guns[p.weapon], moving = Math.hypot(p.vx, p.vz) / tune.walkSpeed;

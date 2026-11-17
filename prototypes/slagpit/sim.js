@@ -21,6 +21,7 @@ function initWorld(viewCanvas) {
   const T = THREE;
   W3.renderer = new T.WebGLRenderer({ canvas: viewCanvas, antialias: false });
   W3.renderer.autoClear = false;
+  W3.renderer.toneMapping = THREE.LinearToneMapping; // exposure = tune.brightness
   W3.scene = new T.Scene();
   W3.camera = new T.PerspectiveCamera(tune.fov, 16 / 9, 0.05, 200);
   W3.camera.rotation.order = 'YXZ';

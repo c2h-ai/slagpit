@@ -12,6 +12,7 @@ window.CONFIG = {
   keyTurn: { value: 2.6, min: 0.5, max: 6, step: 0.1 },        // radians/s with the arrow keys
   fov: { value: 90, min: 60, max: 115, step: 1 },              // degrees, vertical
   zoomFov: { value: 32, min: 15, max: 60, step: 1 },           // degrees, sniper scope
+  brightness: { value: 3.2, min: 0.6, max: 5, step: 0.1 },    // light and fog distance multiplier; 1 is the first build's darkness
   renderScale: { value: 0.5, min: 0.25, max: 1, step: 0.05 },  // 3D pixel ratio: low is the chunky retro look
 
   // Movement (units are metres and seconds)

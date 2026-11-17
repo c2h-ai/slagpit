@@ -118,9 +118,9 @@ window.ART = (() => {
       const l = new T.PointLight(0xff5a1a, 9, 34, 1); l.position.set(x, y, z); scene.add(l); lights.push(l);
     });
     const top = new T.PointLight(0xffa050, 6, 26, 1); top.position.set(0, 7, 0); scene.add(top); lights.push(top);
-    scene.add(new T.HemisphereLight(0x2f5560, 0x1a0e08, 1.1));
+    const hemi = new T.HemisphereLight(0x2f5560, 0x1a0e08, 1.1); scene.add(hemi);
     const sun = new T.DirectionalLight(0x8fa4b0, 0.5); sun.position.set(-10, 20, 6); scene.add(sun);
-    scene.fog = new T.Fog(0x0b0806, 18, 80); scene.background = new T.Color(0x0b0806);
+    scene.fog = new T.Fog(0x1a120e, 18, 80); scene.background = new T.Color(0x24180f); // a smoky ember sky
 
     const spawns = [[26, 0], [-26, 0], [0, 26], [0, -26], [14, 26], [-14, 26], [14, -26], [-14, -26], [26, 14], [-26, -14], [26, -14], [-26, 14]]
       .map(([x, z]) => ({ x, z, yaw: Math.atan2(x, z) }));
@@ -133,7 +133,7 @@ window.ART = (() => {
       [26, 0], [-26, 0], [14, 26], [-14, 26], [14, -26], [-14, -26], [26, 14], [-26, 14], [26, -14], [-26, -14],
       [26, 16], [-26, 16], [26, -16], [-26, -16], [26.5, 26.5], [-26.5, 26.5], [26.5, -26.5], [-26.5, -26.5], [6, 24], [-6, 24], [6, -24], [-6, -24]]
       .map(([x, z]) => ({ x, z }));
-    return { boxes, lavaMats, lights, spawns, pickups, nodes };
+    return { boxes, lavaMats, lights, hemi, sun, spawns, pickups, nodes };
   }
 
   // ---- Figures: every bot kind has its own outline ----------------------------------------

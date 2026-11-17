@@ -14,6 +14,7 @@ After play: 봇 머리 위에 체력바 띄워줘
 After play: 바닥에도 체력 팩 추가해줘
 After play: 전투에서 벗어나 있어도 서서히 차게 해줘. 그리고 명확하게 나의 체력을 알고 싶기는 해.
 After play: 20마리를 죽이는 목표가 좀 어려워 → 권장으로 해줘 (Easy 10, Normal 15, Hard 20)
+After play: 좀 너무 어두운거 같아.
 
 **Pitch:** 어두운 산업형 아레나에서 봇 5명과 벌이는 빠른 개인전 FPS. 슬라이드와 점프로 날아다니며 먼저 20킬. *(provisional)*
 
