@@ -5,13 +5,17 @@
 # The server has no Node.js, so the official build sits inside the install folder (as the
 # monwar ops-tool deploy does). The user has no systemd user session there (no linger), so the
 # server runs under a small restart loop started with nohup; the deploy stops and starts it.
-# The page and the WebSocket share one port (HTTP, no TLS). Open it in the cloud security group.
+# The page and the WebSocket share one port over HTTPS, as https://ai-games-qa.qpyou.cn:2201 (the *.qpyou.cn
+# certificate). The certificate and key sit in ${install}/tls, copied there by someone with sudo from
+# /data/ssl/nodejs (key 600, owned by the deploy user); the server reads them only at start, so after a
+# renewal copy them again and rerun this script. Port 443 needs root, so the game keeps its own port.
 set -euo pipefail
 
 remote_host=jinseungim@43.133.250.99
 port=2201
 install=/home/jinseungim/slagpit
 node_version=v24.22.3
+domain=ai-games-qa.qpyou.cn
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 
 remote() { ssh -o BatchMode=yes -o ConnectTimeout=10 "${remote_host}" "$@"; }
@@ -25,6 +29,7 @@ echo "== build =="
 echo "== runtime =="
 remote_script <<SH
 set -e
+[ -r ${install}/tls/cert.pem ] && [ -r ${install}/tls/key.pem ] || { echo "No certificate in ${install}/tls: copy it from /data/ssl/nodejs first." >&2; exit 1; }
 mkdir -p ${install}/dist ${install}/server-dist ${install}/logs
 cd ${install}
 if [ "\$(node/bin/node --version 2>/dev/null)" != "${node_version}" ]; then
@@ -68,7 +73,8 @@ cat > run.sh <<'RUN'
 # Keeps the game server up: restarts it two seconds after it stops.
 cd "\$(dirname "\$0")"
 while true; do
-  PORT=${port} DIST=${install}/dist node/bin/node server-dist/server.js >> logs/server.out 2>&1
+  PORT=${port} DIST=${install}/dist TLS_CERT_FILE=${install}/tls/cert.pem TLS_KEY_FILE=${install}/tls/key.pem \\
+    node/bin/node server-dist/server.js >> logs/server.out 2>&1
   echo "\$(date -u +%FT%TZ) server stopped (\$?), restarting" >> logs/server.out
   sleep 2
 done
@@ -82,6 +88,6 @@ python3 -c "import time; time.sleep(3)"
 
 echo "== check =="
 remote "ss -ltn | grep -E ':${port} ' | awk '{print \$4}'
-curl -s -o /dev/null -w 'GET / %{http_code}\n' --max-time 5 http://127.0.0.1:${port}/
+curl -s -o /dev/null -w 'GET / %{http_code}\n' --max-time 5 --resolve ${domain}:${port}:127.0.0.1 https://${domain}:${port}/
 tail -2 ${install}/logs/server.out | cut -c1-200"
-echo "Play: http://43.133.250.99:${port}/"
+echo "Play: https://${domain}:${port}/"

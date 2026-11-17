@@ -4,7 +4,10 @@
 // inputs, the server moves everyone, resolves every shot (rewinding the others to what the
 // shooter saw), and sends snapshots.
 //   PORT (default 2201)  DIST (default ./dist)  HOST (default 0.0.0.0)
+//   TLS_CERT_FILE, TLS_KEY_FILE: both set, it serves HTTPS (and wss), read once at start
 import http from 'node:http';
+import https from 'node:https';
+import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
@@ -92,7 +95,9 @@ function tickRoom(room: Room, dt: number): void {
 // ---- The page ------------------------------------------------------------------------
 const MIME: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
   '.png': 'image/png', '.svg': 'image/svg+xml', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.woff2': 'font/woff2' };
-const server = http.createServer(async (req, res) => {
+const tls = process.env.TLS_CERT_FILE && process.env.TLS_KEY_FILE
+  ? { cert: readFileSync(process.env.TLS_CERT_FILE), key: readFileSync(process.env.TLS_KEY_FILE) } : null;
+const handler: http.RequestListener = async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://x');
   if (url.pathname === '/favicon.ico') { res.writeHead(204).end(); return; }
   const rel = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname);
@@ -103,7 +108,8 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': MIME[path.extname(file)] ?? 'application/octet-stream', 'cache-control': rel === '/index.html' ? 'no-cache' : 'max-age=3600' });
     res.end(body);
   } catch { res.writeHead(404).end('not found'); }
-});
+};
+const server = tls ? https.createServer(tls, handler) : http.createServer(handler);
 
 // ---- The sockets ----------------------------------------------------------------------
 const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 64 * 1024 });
@@ -144,4 +150,4 @@ setInterval(() => {
   while (acc >= STEP) { for (const r of rooms.values()) tickRoom(r, STEP); acc -= STEP; }
 }, 1000 / TICK_HZ / 2);
 
-server.listen(PORT, HOST, () => console.log(`slagpit server on http://${HOST}:${PORT} serving ${DIST}`));
+server.listen(PORT, HOST, () => console.log(`slagpit server on ${tls ? 'https' : 'http'}://${HOST}:${PORT} serving ${DIST}`));
