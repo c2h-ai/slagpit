@@ -1,0 +1,1 @@
+iteration 1	ammo crate is left alone when every reserve is full	errors: none (console rows are the headless GPU driver ReadPixels notice only)	prototypes/slagpit/evidence/iteration-1-play.png

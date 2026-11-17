@@ -9,6 +9,7 @@
 4. Look: 어둡고 대비 강한 Quake풍으로 해줘
 5. Challenge: usual
 6. Slice or quick test: usual (slice)
+After play: 1번으로 고쳐줘 (예비탄이 모두 가득 차 있으면 탄약 상자를 먹지 않게)
 
 **Pitch:** 어두운 산업형 아레나에서 봇 5명과 벌이는 빠른 개인전 FPS. 슬라이드와 점프로 날아다니며 먼저 20킬. *(provisional)*
 

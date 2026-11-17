@@ -167,7 +167,7 @@ function updatePickups(dt) {
         if (c.hp >= (c.isPlayer ? tune.maxHealth : tune[c.kind + 'Hp'])) continue;
         c.hp = Math.min(c.isPlayer ? tune.maxHealth : tune[c.kind + 'Hp'], c.hp + tune.healthAmount);
       } else {
-        if (!c.isPlayer) continue;
+        if (!c.isPlayer || GUNS.every((k, i) => c.guns[i].reserve >= tune[k + 'Reserve'])) continue; // full: leave the crate
         GUNS.forEach((k, i) => { const max = tune[k + 'Reserve']; c.guns[i].reserve = Math.min(max, c.guns[i].reserve + Math.ceil(max * tune.ammoFraction)); });
       }
       pk.cd = tune.pickupRespawn;
