@@ -40,6 +40,7 @@ window.CONFIG = {
   healthAmount: { value: 50, min: 10, max: 100, step: 5 },
   ammoFraction: { value: 0.5, min: 0.1, max: 1, step: 0.05 },  // of each gun's full reserve
   pickupRespawn: { value: 15, min: 3, max: 60, step: 1 },      // s
+  hpBarTime: { value: 3, min: 0.5, max: 10, step: 0.5 },    // s a bot's health bar shows after you hit it
   headMult: { value: 1.6, min: 1, max: 3, step: 0.1 },         // headshot damage multiplier
   lowAmmo: { value: 0.25, min: 0, max: 0.6, step: 0.05 },      // fraction of a magazine that warns
 

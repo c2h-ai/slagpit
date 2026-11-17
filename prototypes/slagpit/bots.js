@@ -22,7 +22,7 @@ function newBot([kind, name], i) {
 const diffTune = n => tune[n + settings.diff];
 
 function updateBot(b, dt) {
-  b.px = b.x; b.py = b.y; b.pz = b.z; b.flash -= dt;
+  b.px = b.x; b.py = b.y; b.pz = b.z; b.flash -= dt; b.barT = (b.barT || 0) - dt;
   if (!b.alive) {
     b.deathT += dt; b.respawn -= dt;
     if (b.respawn <= 0) {
@@ -133,7 +133,7 @@ function hurt(v, amount, by, head) {
   v.hp -= amount;
   if (!v.isPlayer) v.alert = by;
   if (v.isPlayer) { state.hurt.push({ ang: angleTo(v, by) - v.yaw, t: 1 }); state.redFlash = 0.25; sfx('hurt'); }
-  if (by.isPlayer) { state.hitmark = 0.18; state.hitHead = head; sfx(head ? 'head' : 'hit'); }
+  if (by.isPlayer) { v.barT = tune.hpBarTime; state.hitmark = 0.18; state.hitHead = head; sfx(head ? 'head' : 'hit'); }
   if (v.hp > 0) return;
   v.alive = false; v.deaths++; v.deathT = 0;
   v.respawn = v.isPlayer ? tune.respawnTime : tune.botRespawn;

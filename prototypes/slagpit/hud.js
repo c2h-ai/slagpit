@@ -75,6 +75,19 @@ function drawHud() {
     ctx.fillRect(cx - gap - 9, cy - 1, 9, 2); ctx.fillRect(cx + gap, cy - 1, 9, 2);
     ctx.fillRect(cx - 1, cy - gap - 9, 2, 9); ctx.fillRect(cx - 1, cy + gap, 2, 9);
   }
+  // health bars over bots you hit lately
+  const v3 = new THREE.Vector3();
+  state.bots.forEach(b => {
+    if (!b.alive || !(b.barT > 0)) return;
+    const s = SHAPES[b.kind];
+    v3.set(b.x, b.y + s.h + s.hh + 0.35, b.z).project(W3.camera);
+    if (v3.z > 1 || Math.abs(v3.x) > 1.1 || Math.abs(v3.y) > 1.1) return;
+    const x = (v3.x + 1) / 2 * W, y = (1 - v3.y) / 2 * H, k = b.hp / tune[b.kind + 'Hp'];
+    ctx.globalAlpha = Math.min(1, b.barT);
+    ctx.fillStyle = '#000'; ctx.fillRect(x - 32, y - 5, 64, 10);
+    bar(x - 30, y - 3, 60, 6, k, k < 0.35 ? BLOOD : ORANGE);
+    ctx.globalAlpha = 1;
+  });
   if (state.hitmark > 0) { // hit marker: an X on the crosshair
     ctx.strokeStyle = state.hitHead ? BLOOD : YELLOW; ctx.lineWidth = 3; ctx.globalAlpha = Math.min(1, state.hitmark / 0.1);
     ctx.beginPath();
