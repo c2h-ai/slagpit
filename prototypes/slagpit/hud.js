@@ -95,12 +95,26 @@ function drawHud() {
     ctx.stroke(); ctx.globalAlpha = 1;
   }
   if (state.killmark > 0) text('KILL', cx, cy + 46, 22, BLOOD);
-  // hurt direction: a red arc at the screen edge of the hit
+  // hurt direction: a bright red arrow pointing toward the shooter, over a faint arc
   state.hurt.forEach(hm => {
-    const a = -Math.PI / 2 - hm.ang;
-    ctx.strokeStyle = `rgba(220,30,20,${hm.t})`; ctx.lineWidth = 14;
-    ctx.beginPath(); ctx.arc(cx, cy, 230, a - 0.35, a + 0.35); ctx.stroke();
+    const a = -Math.PI / 2 - hm.ang, ux = Math.cos(a), uy = Math.sin(a), vx = -uy, vy = ux;
+    ctx.strokeStyle = `rgba(220,30,20,${hm.t * 0.6})`; ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.arc(cx, cy, 200, a - 0.3, a + 0.3); ctx.stroke();
+    const tip = 262, base = 214, half = 30, x0 = cx + ux * tip, y0 = cy + uy * tip;
+    ctx.fillStyle = `rgba(255,50,30,${hm.t})`; ctx.strokeStyle = `rgba(20,0,0,${hm.t})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x0, y0);
+    ctx.lineTo(cx + ux * base + vx * half, cy + uy * base + vy * half);
+    ctx.lineTo(cx + ux * (base + 14), cy + uy * (base + 14));
+    ctx.lineTo(cx + ux * base - vx * half, cy + uy * base - vy * half);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
   });
+  if (state.hurtLabel > 0 && state.hurt.length) { // the first hit of a match says what the arrow means
+    const hm = state.hurt[state.hurt.length - 1], a = -Math.PI / 2 - hm.ang;
+    const x = cx + Math.cos(a) * 320, y = cy + Math.sin(a) * 300;
+    ctx.globalAlpha = Math.min(1, state.hurtLabel);
+    panel(x - 105, y - 18, 210, 36, 0.8); text('SHOT FROM HERE', x, y, 20, '#ff5a3a');
+    ctx.globalAlpha = 1;
+  }
   const low = p.hp < 35;
   if (state.redFlash > 0 || (low && p.alive)) {
     const k2 = Math.max(state.redFlash * 2, low ? 0.25 + 0.1 * Math.sin(state.t * 6) : 0);
@@ -141,9 +155,10 @@ function drawHud() {
   });
   if (state.phase === 'countdown') {
     text(String(Math.ceil(state.countdown)), cx, cy - 90, 96, YELLOW);
-    panel(cx - 330, cy + 110, 660, 74);
+    panel(cx - 330, cy + 110, 660, 100);
     text('Run, then SHIFT to slide.  SPACE during a slide to jump and keep the speed.', cx, cy + 134, 17, '#f0e8da');
     text('Hold SPACE to hop on landing.  Bots in this arena are bots, not people.', cx, cy + 162, 15, DIM);
+    text('A RED ARROW around the crosshair points to where you are being shot from.', cx, cy + 188, 15, '#ff5a3a');
   }
   if (!p.alive) {
     ctx.fillStyle = 'rgba(70,0,0,0.45)'; ctx.fillRect(0, 0, W, H);

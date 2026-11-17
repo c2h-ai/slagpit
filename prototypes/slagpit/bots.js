@@ -133,6 +133,7 @@ function hurt(v, amount, by, head) {
   if (!v.alive || state.phase !== 'fight') return;
   v.hp -= amount;
   if (!v.isPlayer) v.alert = by;
+  if (v.isPlayer && !state.toldHurt) { state.toldHurt = true; state.hurtLabel = 2; }
   if (v.isPlayer) { v.sinceHurt = 0; state.hurt.push({ ang: angleTo(v, by) - v.yaw, t: 1 }); state.redFlash = 0.25; sfx('hurt'); }
   if (by.isPlayer) { v.barT = tune.hpBarTime; state.hitmark = 0.18; state.hitHead = head; sfx(head ? 'head' : 'hit'); }
   if (v.hp > 0) return;
@@ -185,7 +186,7 @@ function newMatch() {
   state.bots = ROSTER.map(newBot);
   state.all = [state.player, ...state.bots];
   Object.assign(state, {
-    phase: 'countdown', countdown: tune.countdown, timeLeft: tune.matchTime, feed: [], hurt: [], hitmark: 0, hitHead: false,
+    phase: 'countdown', countdown: tune.countdown, timeLeft: tune.matchTime, feed: [], hurt: [], toldHurt: false, hurtLabel: 0, hitmark: 0, hitHead: false,
     killmark: 0, redFlash: 0, won: false, ranked: null,
     pickups: W3.arena.pickups.map(p => ({ ...p, cd: 0 })),
   });
@@ -203,7 +204,7 @@ function updateMatch(dt) {
   updatePlayer(state.player, dt, fight);
   if (fight) { state.bots.forEach(b => updateBot(b, dt)); updatePickups(dt); }
   else state.bots.forEach(b => { b.px = b.x; b.py = b.y; b.pz = b.z; });
-  state.hitmark -= dt; state.killmark -= dt; state.redFlash -= dt;
+  state.hitmark -= dt; state.hurtLabel -= dt; state.killmark -= dt; state.redFlash -= dt;
   state.hurt.forEach(h => h.t -= dt); state.hurt = state.hurt.filter(h => h.t > 0);
   state.feed.forEach(f => f.t -= dt); state.feed = state.feed.filter(f => f.t > 0);
   updateFx(dt);
