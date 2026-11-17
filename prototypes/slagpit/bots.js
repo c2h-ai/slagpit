@@ -20,6 +20,7 @@ function newBot([kind, name], i) {
   };
 }
 const diffTune = n => tune[n + settings.diff];
+const killTarget = () => diffTune('matchKills'); // the first-to score for the picked bot skill
 
 function updateBot(b, dt) {
   b.px = b.x; b.py = b.y; b.pz = b.z; b.flash -= dt; b.barT = (b.barT || 0) - dt;
@@ -37,7 +38,7 @@ function updateBot(b, dt) {
   if (b.think <= 0) {
     b.think = 0.25;
     let best = null, bestS = Infinity;
-    const lead = leader(), late = state.timeLeft < tune.matchTime * 0.5 || (lead && lead.kills >= tune.matchKills * 0.5);
+    const lead = leader(), late = state.timeLeft < tune.matchTime * 0.5 || (lead && lead.kills >= killTarget() * 0.5);
     for (const c of state.all) {
       if (c === b || !c.alive) continue;
       const dx = c.x - b.x, dz = c.z - b.z, d = Math.hypot(dx, dz);
@@ -144,7 +145,7 @@ function hurt(v, amount, by, head) {
   events.push({ type: 'kill', by: by.name, victim: v.name });
   if (by.isPlayer) { state.killmark = 0.6; state.score = by.kills; sfx('kill'); }
   if (v.isPlayer) { v.killedBy = by.name; sfx('death'); }
-  if (by.kills >= tune.matchKills) endMatch();
+  if (by.kills >= killTarget()) endMatch();
 }
 function endMatch() {
   const ranked = [...state.all].sort((a, b) => b.kills - a.kills);

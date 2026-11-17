@@ -34,7 +34,9 @@ window.CONFIG = {
   maxHealth: { value: 100, min: 50, max: 200, step: 5 },
   respawnTime: { value: 2, min: 0.5, max: 6, step: 0.1 },      // s, the player
   botRespawn: { value: 2.5, min: 0.5, max: 8, step: 0.1 },     // s
-  matchKills: { value: 20, min: 3, max: 50, step: 1 },         // first to this wins
+  matchKills0: { value: 10, min: 3, max: 50, step: 1 },        // first to this wins, Easy
+  matchKills1: { value: 15, min: 3, max: 50, step: 1 },        // Normal
+  matchKills2: { value: 20, min: 3, max: 50, step: 1 },        // Hard
   matchTime: { value: 300, min: 60, max: 900, step: 10 },      // s
   countdown: { value: 3, min: 0, max: 6, step: 0.5 },         // s before the fight
   regenDelay: { value: 4, min: 0, max: 15, step: 0.5 },      // s without being hit before health comes back

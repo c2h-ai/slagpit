@@ -133,7 +133,7 @@ function drawHud() {
   const lead = [...state.all].sort((a, b) => b.kills - a.kills).find(c => !c.isPlayer);
   panel(cx - 170, 14, 340, 64);
   text(fmtTime(state.timeLeft), cx, 36, 26, '#f0e8da');
-  text(`YOU ${p.kills}   ·   ${lead.name} ${lead.kills}   ·   FIRST TO ${tune.matchKills}`, cx, 62, 15, DIM);
+  text(`YOU ${p.kills}   ·   ${lead.name} ${lead.kills}   ·   FIRST TO ${killTarget()}`, cx, 62, 15, DIM);
   // kill feed, top right
   state.feed.forEach((f, i) => {
     ctx.globalAlpha = Math.min(1, f.t); panel(W - 380, 14 + i * 30, 356, 26, 0.5);
@@ -177,7 +177,7 @@ function chooser(label, opts, cur, y, active) {
 function drawTitle() {
   ctx.fillStyle = 'rgba(6,4,3,0.55)'; ctx.fillRect(0, 0, W, H);
   text(TITLE.toUpperCase(), W / 2, 130, 92, ORANGE);
-  text('A deathmatch against five bots. First to ' + tune.matchKills + ' kills.', W / 2, 200, 20, DIM);
+  text(`A deathmatch against five bots. First to ${killTarget()} kills (${DIFFS[settings.diff]}).`, W / 2, 200, 20, DIM);
   panel(W / 2 - 340, 240, 680, 140, 0.7);
   chooser('BOT SKILL', DIFFS, settings.diff, 285, settings.row === 0);
   chooser('START GUN', GUN_NAMES, settings.weapon, 340, settings.row === 1);
