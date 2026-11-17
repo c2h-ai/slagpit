@@ -1,0 +1,2 @@
+stop	3600
+log	Enter wait:3.2 KeyW:1.5 ShiftLeft Space wait:0.5 ArrowLeft:1 KeyD:1.5 Mouse0:1 KeyW:2 wait:2

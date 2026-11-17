@@ -1,0 +1,167 @@
+browser	/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+time	2026-11-17 12:50:37
+render	cheap
+webgl	ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)
+console	989	[.WebGL-0x12400533600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+ua	HeadlessChrome/157.0.0.0
+scene	0	title
+state	0	title	{"t":0,"score":0,"gained":"","all":[{"isPlayer":true,"name":"You","x":26,"y":0,"z":0,"px":26,"py":0,"pz":0,"vx":0,"vy":0,"vz":0,"r":0.35,"yaw":1.57,"pitch":0,"grounded":true,"hp":100,"alive":true,"res
+scene	1	play
+state	1	play	{"t":0,"score":0,"gained":"","all":[{"isPlayer":true,"name":"You","x":26,"y":0,"z":0,"px":26,"py":0,"pz":0,"vx":0,"vy":0,"vz":0,"r":0.35,"yaw":1.57,"pitch":0,"grounded":true,"hp":100,"alive":true,"res
+playinput	196	KeyW
+frame	3481	e6021c88
+frame	3482	d68fe53a
+frame	3483	5cd8855d
+frame	3484	b0174c7f
+frame	3485	316e2d6f
+frame	3486	e71a94ba
+frame	3487	b85369c9
+frame	3488	3c8f059e
+frame	3489	d9354e64
+frame	3490	baca4a3
+frame	3491	4f294244
+frame	3492	41853733
+frame	3493	f95615f7
+frame	3494	2945e0bf
+frame	3495	b73299ba
+frame	3496	52e841f7
+frame	3497	44bedf0c
+frame	3498	8325a2fc
+frame	3499	327d3560
+frame	3500	2cad7f16
+frame	3501	239ecffe
+frame	3502	bfa6d81d
+frame	3503	ced06a8a
+frame	3504	858527ef
+frame	3505	9090be9
+frame	3506	3fc5091a
+frame	3507	6c4b9628
+frame	3508	3848fbce
+frame	3509	d282cdf7
+frame	3510	c7152890
+frame	3511	cde94cf7
+frame	3512	b3750f30
+frame	3513	8fe0ef4f
+frame	3514	77fb4606
+frame	3515	1ee1ba82
+frame	3516	112ac038
+frame	3517	a022af1a
+frame	3518	2a8343b7
+frame	3519	2aa98847
+frame	3520	c18247f6
+frame	3521	fc4536b0
+frame	3522	d945f796
+frame	3523	3188da05
+frame	3524	642019c9
+frame	3525	98a9ee7
+frame	3526	9f67ec8a
+frame	3527	c8090779
+frame	3528	856d8657
+frame	3529	b8aaa4e6
+frame	3530	b018e727
+frame	3531	51f8e761
+frame	3532	ecbec135
+frame	3533	662d2515
+frame	3534	dd03840
+frame	3535	4ff402fe
+frame	3536	48aae4a8
+frame	3537	52e5253
+frame	3538	1f1e1b83
+frame	3539	6e04b70c
+frame	3540	60f0402a
+frame	3541	2ed0368f
+frame	3542	e53b8fcf
+frame	3543	9cac444a
+frame	3544	f15984ff
+frame	3545	8a0c3996
+frame	3546	d867151a
+frame	3547	b6522b48
+frame	3548	e11e18f1
+frame	3549	746a9cd5
+frame	3550	ff21a392
+frame	3551	dd462ba5
+frame	3552	7bc2571f
+frame	3553	7e0805bc
+frame	3554	7f148616
+frame	3555	581de4d9
+frame	3556	2471176d
+frame	3557	2879859c
+frame	3558	77fec3be
+frame	3559	f86eb6f
+frame	3560	e3d07230
+frame	3561	65ee99ca
+frame	3562	52042c1b
+frame	3563	dfa0eb45
+frame	3564	e0e5cc60
+frame	3565	de6931ff
+frame	3566	5d94d515
+frame	3567	3128fb6c
+frame	3568	e354ce84
+frame	3569	df57aab
+frame	3570	3be7258c
+frame	3571	be6a740
+frame	3572	28310ffd
+frame	3573	20f0a9f8
+frame	3574	aa8c61ad
+frame	3575	89fae745
+frame	3576	8c0b5284
+frame	3577	c129b042
+frame	3578	f373860d
+frame	3579	4cc4bff0
+frame	3580	c8b0cc08
+frame	3581	1574aea
+frame	3582	c81d14d5
+frame	3583	c0f042bb
+frame	3584	78733aa0
+frame	3585	455bc946
+frame	3586	c701d9eb
+frame	3587	80ffa118
+frame	3588	c545376f
+frame	3589	ba008fbc
+frame	3590	33f0ed3e
+frame	3591	a82c567b
+frame	3592	9664d16f
+frame	3593	f907bf75
+frame	3594	d7a3cb7e
+frame	3595	170652e2
+frame	3596	eb4454f4
+frame	3597	f6cd7710
+frame	3598	289956ca
+frame	3599	de43949e
+frame	3600	b681f9a6
+state	3600	play	-
+digits	log	20px Impact, "Arial Black", sans-serif	proportional	3.213
+digits	log	16px Impact, "Arial Black", sans-serif	proportional	2.57
+digits	log	44px Impact, "Arial Black", sans-serif	proportional	7.068
+digits	log	36px Impact, "Arial Black", sans-serif	proportional	5.783
+digits	log	22px Impact, "Arial Black", sans-serif	proportional	3.534
+digits	log	14px Impact, "Arial Black", sans-serif	proportional	2.249
+digits	log	28px Impact, "Arial Black", sans-serif	proportional	4.498
+digits	log	34px Impact, "Arial Black", sans-serif	proportional	5.462
+digits	log	96px Impact, "Arial Black", sans-serif	proportional	15.422
+loop	log	none	no loop() step was marked
+first	log	none	no state.beat
+pressure	none	the game set no number state.margin in play
+steptime	3600	0.018	3.300
+frametime	60	11.6	133.2	1800	5	3
+done	3600	play	stop	60.0	3802
+console	0	[.WebGL-0x12400533600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console	0	[.WebGL-0x12400533600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+console	0	[.WebGL-0x12400533600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+measured	1280x720
+text	play	canvas	45,620,85,632	20.3	9.15	inside	HEALTH
+text	play	canvas	78,641,140,677	59.6	16.96	inside	100
+text	play	canvas	150,657,190,674	27.1	9.15	inside	/ 100
+text	play	canvas	1051,647,1087,676	48.7	16.96	inside	30
+text	play	canvas	1110,657,1153,675	29.8	9.15	inside	/ 120
+text	play	canvas	1208,647,1240,660	21.7	14.41	inside	RIFLE
+text	play	canvas	1215,670,1240,681	18.9	9.15	inside	1 2 3
+text	play	canvas	616,28,664,51	37.9	16.96	inside	4:04
+text	play	canvas	609,62,671,73	18.9	9.15	inside	FIRST TO 15
+text	play	canvas	410,28,433,40	20.3	14.41	inside	YOU
+text	play	canvas	411,47,427,75	46.0	14.41	inside	0
+text	play	canvas	809,28,870,41	20.3	9.15	inside	BOT Scrap
+text	play	canvas	853,48,869,75	46.0	16.96	inside	5
+screen	3600	play	86fdf42c	drawn
+uncaught	0
+shot	/Users/jinseungim/development/dev-game/new-game/production/qa/evidence/grow-slagpit/reference.png	210404
